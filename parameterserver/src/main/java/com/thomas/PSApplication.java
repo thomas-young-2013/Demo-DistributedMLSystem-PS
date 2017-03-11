@@ -1,7 +1,7 @@
 package com.thomas;
 
 import com.thomas.implementation.ParameterServerServiceImp;
-import com.thomas.thrift.ParameterServerService;
+import com.thomas.thrift.server.ParameterServerService;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.thrift.protocol.TCompactProtocol;
@@ -13,7 +13,7 @@ import org.apache.thrift.transport.TServerSocket;
  * Created by hadoop on 3/8/17.
  */
 public class PSApplication {
-    public static final int SERVER_PORT = 9009;
+    public static final int SERVER_PORT = 8000;
     private Logger logger = Logger.getLogger(this.getClass());
     /**
      * @param args

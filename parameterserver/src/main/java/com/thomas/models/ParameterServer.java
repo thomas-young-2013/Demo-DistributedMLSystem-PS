@@ -20,33 +20,38 @@ public class ParameterServer {
         metaData = new HashMap<String, ParameterTableMetaData>();
     }
 
-    public void createParameterTable(String []machines, String tableId, int dimems, Double[] intialVector) {
+    public void createParameterTable(List<String> machines, String tableId, Double[] intialVector) {
         logger.info("create parameter table: " + tableId);
 
-        ParameterTable table = new ParameterTable(dimems);
+        ParameterTable table = new ParameterTable(intialVector.length);
         table.init(intialVector);
         tables.put(tableId, table);
-        metaData.put(tableId, new ParameterTableMetaData(machines.length));
+        metaData.put(tableId, new ParameterTableMetaData(machines.size()));
     }
 
     public ArrayList<Double> readRows(String tableId, int rowId, int range) {
-        logger.info("read table row: " + tableId + ", row id : " + rowId);
-
-        ParameterTable parameterTable = tables.get(tableId);
 
         Double[] data = tables.get(tableId).getRow(rowId);
         ArrayList<Double> list = new ArrayList<Double>();
         for (double d: data) list.add(d);
+
+        logger.info("read table row: " + tableId + ", row id : " + rowId+ " " + list);
+
         return list;
     }
 
     public void updateRows(String tableId, int rowId, List<Double> valVector) {
-        logger.info("update table row: " + tableId + ", row id : " + rowId);
+        logger.info("update table row:" + tableId + ", rowid:" + rowId+ " " + valVector);
 
         metaData.get(tableId).recieverNum.getAndIncrement();
         Double [] delta = new Double[valVector.size()];
         for (int i=0; i<valVector.size(); i++) delta[i] = valVector.get(i);
         tables.get(tableId).updateRow(rowId, delta);
+
+        // if some iteration completed, initialize the next one parameter.
+        if (metaData.get(tableId).isRoundOver()) {
+            tables.get(tableId).initNextRow(rowId);
+        }
     }
 
     public boolean round(String tableId) {

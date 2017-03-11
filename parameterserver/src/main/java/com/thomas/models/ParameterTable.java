@@ -25,6 +25,12 @@ public class ParameterTable {
         }
     }
 
+    public void initNextRow(int rowId) {
+        Double [] data = new Double[dimenNum];
+        System.arraycopy(getRow(rowId), 0, data, 0, dimenNum);
+        params.add(data);
+    }
+
     public void init(Double[] intials) {
         params.add(intials);
     }

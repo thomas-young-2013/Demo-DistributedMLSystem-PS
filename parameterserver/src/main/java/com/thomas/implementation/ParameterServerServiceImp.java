@@ -1,7 +1,7 @@
 package com.thomas.implementation;
 
 import com.thomas.models.ParameterServer;
-import com.thomas.thrift.ParameterServerService;
+import com.thomas.thrift.server.ParameterServerService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,11 +25,16 @@ public class ParameterServerServiceImp implements ParameterServerService.Iface {
     }
 
     public boolean round(String tableId) {
-        return true;
+        return parameterServer.round(tableId);
     }
 
     public boolean createTable(String tableId, List<String> machines, List<Double> valVector) {
-        parameterServer.createParameterTable(new String []{"C1", "C2"}, "lr", 3, new Double[]{0.0, 0.0, 0.0});
+        Double []initialArray = new Double[valVector.size()];
+        for (int i=0; i<valVector.size(); i++) {
+            initialArray[i] = valVector.get(i);
+        }
+
+        parameterServer.createParameterTable(machines, tableId, initialArray);
         return true;
     }
 }
