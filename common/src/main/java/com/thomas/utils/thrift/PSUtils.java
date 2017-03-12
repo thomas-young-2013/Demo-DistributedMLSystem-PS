@@ -3,8 +3,6 @@ package com.thomas.utils.thrift;
 import com.thomas.models.Node;
 import com.thomas.models.PSTable;
 import com.thomas.thrift.server.ParameterServerService;
-import com.thomas.thrift.worker.JobConfig;
-import com.thomas.thrift.worker.PSWorkerService;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
