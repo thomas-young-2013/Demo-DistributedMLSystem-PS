@@ -1,4 +1,4 @@
-package com.thomas.implementation;
+package com.thomas;
 
 import com.thomas.models.ParameterServer;
 import com.thomas.thrift.server.ParameterServerService;

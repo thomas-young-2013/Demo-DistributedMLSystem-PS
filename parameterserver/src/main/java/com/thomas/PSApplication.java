@@ -1,6 +1,5 @@
 package com.thomas;
 
-import com.thomas.implementation.ParameterServerServiceImp;
 import com.thomas.thrift.server.ParameterServerService;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
