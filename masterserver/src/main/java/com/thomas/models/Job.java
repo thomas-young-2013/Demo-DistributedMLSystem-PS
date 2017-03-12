@@ -5,6 +5,7 @@ import com.thomas.thrift.master.JobInfo;
 import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.utils.constant.NodeStatus;
+import com.thomas.utils.thrift.PSUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -51,26 +52,7 @@ public class Job {
     }
 
     public ArrayList<Double> getParamsResult() {
-        TTransport transport = null;
-        ArrayList<Double> params = new ArrayList<Double>();
-        try {
-            Node node = parameterServers.get(0);
-            transport = new TSocket(node.hostId, node.port, TIMEOUT);
-            TProtocol protocol = new TCompactProtocol(transport);
-            ParameterServerService.Client client = new ParameterServerService.Client(protocol);
-            transport.open();
-
-            params = (ArrayList<Double>) client.readRows(tables.get(0).tableId, iteNum, 2);
-
-        } catch (TTransportException e) {
-            e.printStackTrace();
-        } catch (TException e) {
-            e.printStackTrace();
-        } finally {
-            if (null != transport) {
-                transport.close();
-            }
-            return params;
-        }
+        Node node = parameterServers.get(0);
+        return PSUtils.getParams(node, iteNum, tables.get(0).tableId);
     }
 }

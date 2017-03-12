@@ -4,8 +4,12 @@ import com.thomas.thrift.master.ExecInfo;
 import com.thomas.thrift.master.JobInfo;
 import com.thomas.thrift.master.JobResult;
 import com.thomas.thrift.worker.JobConfig;
+import com.thomas.utils.thrift.PSUtils;
+import com.thomas.utils.thrift.WorkerUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by hadoop on 3/12/17.
@@ -47,7 +51,7 @@ public class Master {
         }
 
         try {
-            createParameterTable(psTable);
+            createParameterTable(psTable, job.workers);
 
             // at last, assign the job to the workers.
             createWorkers(job);
@@ -78,13 +82,25 @@ public class Master {
         return true;
     }
 
-    public void createParameterTable(PSTable psTable) throws Exception {
+    public void createParameterTable(PSTable psTable, List<Node> workers) throws Exception {
+        ArrayList<String> machines = new ArrayList<String>();
+        for (Node node: workers) machines.add(node.hostId);
 
+        /*
+        * TO DO LIST: support customized initialization such as rand(), or zero() and so on..
+        * */
+        ArrayList<Double> initials = new ArrayList<Double>();
+        initials.add(0.0);
+        initials.add(0.0);
+        initials.add(0.0);
+
+        PSUtils.createTable(psTable, machines, initials);
     }
 
     public void createWorkers(Job job) {
         for (int i=0; i<job.workers.size(); i++) {
             // send config info to each worker.
+            WorkerUtils.assignJob(job.workers.get(i), job.jobConfigs.get(i));
         }
     }
 

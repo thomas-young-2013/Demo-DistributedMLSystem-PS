@@ -1,4 +1,4 @@
-namespace java com.thomas
+namespace java com.thomas.thrift.server
 
 service ParameterServerService {
   list<double> readRows(
