@@ -36,6 +36,7 @@ public class ParameterServer {
         for (double d: data) list.add(d);
 
         logger.info("read table row: " + tableId + ", row id : " + rowId+ " " + list);
+        System.out.println("read table row: " + tableId + ", row id : " + rowId+ " " + list);
 
         return list;
     }
@@ -43,7 +44,7 @@ public class ParameterServer {
     public void updateRows(String tableId, int rowId, List<Double> valVector) {
         logger.info("update table row:" + tableId + ", rowid:" + rowId+ " " + valVector);
 
-        metaData.get(tableId).recieverNum.getAndIncrement();
+        metaData.get(tableId).updateNum.getAndIncrement();
         Double [] delta = new Double[valVector.size()];
         for (int i=0; i<valVector.size(); i++) delta[i] = valVector.get(i);
         tables.get(tableId).updateRow(rowId, delta);
@@ -55,11 +56,9 @@ public class ParameterServer {
     }
 
     public boolean round(String tableId) {
-        if (metaData.get(tableId).isRoundOver()) {
-            metaData.get(tableId).recieverNum.set(0);
-            return true;
-        }
-        return false;
+        // System.out.println("round received. num: "+metaData.get(tableId).recieverNum.get());
+        // logger.info("round received. num: "+metaData.get(tableId).recieverNum.get());
+        return metaData.get(tableId).isRoundOver();
     }
 
 }

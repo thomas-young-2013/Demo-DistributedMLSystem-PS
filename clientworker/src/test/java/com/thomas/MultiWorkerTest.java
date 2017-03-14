@@ -4,6 +4,7 @@ import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.thrift.worker.PSWorkerService;
 import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
@@ -24,12 +25,12 @@ public class MultiWorkerTest {
         // start a worker and run a job.
         Runnable s1 = new Runnable() {
             public void run() {
-                workerTest.startWorker("localhost", 8089, 30000, "/home/hadoop/Desktop/train.txt");
+                workerTest.startWorker("localhost", 8080, 30000, "/home/hadoop/Desktop/train.txt");
             }
         };
         Runnable s2 = new Runnable() {
             public void run() {
-                workerTest.startWorker("localhost", 8090, 30000, "/home/hadoop/Desktop/train2.txt");
+                workerTest.startWorker("localhost", 8081, 30000, "/home/hadoop/Desktop/train2.txt");
             }
         };
         new Thread(s1).start();
@@ -48,7 +49,7 @@ public class MultiWorkerTest {
         TTransport transport = null;
         try {
             transport = new TSocket(host, port, timeout);
-            TProtocol protocol = new TCompactProtocol(transport);
+            TProtocol protocol = new TBinaryProtocol(transport);
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
 
@@ -81,7 +82,7 @@ public class MultiWorkerTest {
             JobConfig jobConfig = new JobConfig();
             jobConfig.jobKey = 1231231L;
             jobConfig.jobType = "LINEAR_REGRESSION";
-            jobConfig.learningRate = 0.025;
+            jobConfig.learningRate = 0.02;
             jobConfig.dataPath = dataPath;
             jobConfig.iteNum = 1000;
             jobConfig.serverId = "localhost";

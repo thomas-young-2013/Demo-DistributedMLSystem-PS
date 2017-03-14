@@ -4,6 +4,7 @@ import com.thomas.models.Node;
 import com.thomas.models.PSTable;
 import com.thomas.thrift.server.ParameterServerService;
 import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
@@ -25,7 +26,8 @@ public class PSUtils {
 
         try {
             transport = new TSocket(node.hostId, node.port, TIMEOUT);
-            TProtocol protocol = new TCompactProtocol(transport);
+            // TProtocol protocol = new TCompactProtocol(transport);
+            TProtocol protocol = new TBinaryProtocol(transport);
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
 
@@ -47,7 +49,8 @@ public class PSUtils {
         ArrayList<Double> params = new ArrayList<Double>();
         try {
             transport = new TSocket(node.hostId, node.port, TIMEOUT);
-            TProtocol protocol = new TCompactProtocol(transport);
+            // TProtocol protocol = new TCompactProtocol(transport);
+            TProtocol protocol = new TBinaryProtocol(transport);
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
 

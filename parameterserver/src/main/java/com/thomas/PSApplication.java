@@ -6,6 +6,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TSimpleServer;
+import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 
 /**
@@ -32,12 +33,14 @@ public class PSApplication {
                     new ParameterServerService.Processor<ParameterServerService.Iface>(new ParameterServerServiceImp());
 
             TServerSocket serverTransport = new TServerSocket(SERVER_PORT);
-            TServer.Args tArgs = new TServer.Args(serverTransport);
+            /*TServer.Args tArgs = new TServer.Args(serverTransport);
             tArgs.processor(tprocessor);
 
-            tArgs.protocolFactory(new TCompactProtocol.Factory());
+            tArgs.protocolFactory(new TCompactProtocol.Factory());*/
 
-            TServer server = new TSimpleServer(tArgs);
+            TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(tprocessor));
+
+            // TServer server = new TSimpleServer(tArgs);
             server.serve();
 
         } catch (Exception e) {

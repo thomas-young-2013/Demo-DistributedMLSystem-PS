@@ -6,16 +6,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by hadoop on 3/6/17.
  */
 public class ParameterTableMetaData {
-    public AtomicInteger recieverNum;
+    public AtomicInteger updateNum;
+    public AtomicInteger readNum;
     public int participantNum;
     public String [] participantsHosts;
 
     ParameterTableMetaData(int num) {
         participantNum = num;
-        recieverNum = new AtomicInteger(0);
+        updateNum = new AtomicInteger(0);
+        readNum = new AtomicInteger(0);
     }
 
     boolean isRoundOver() {
-        return recieverNum.get() == participantNum;
+        return readNum.get() == participantNum;
     }
 }

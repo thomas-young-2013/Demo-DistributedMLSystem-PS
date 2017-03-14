@@ -2,8 +2,10 @@ package com.thomas;
 
 import com.thomas.thrift.server.ParameterServerService;
 import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -34,22 +36,20 @@ public class PSServerTest {
         TTransport transport = null;
         try {
             transport = new TSocket(SERVER_IP, SERVER_PORT, TIMEOUT);
-            TProtocol protocol = new TCompactProtocol(transport);
-            ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
+            // TProtocol protocol = new TCompactProtocol(transport);
+            TProtocol protocol = new TBinaryProtocol(transport);
+            ParameterServerService.Client client = new ParameterServerService.Client(protocol);
 
-            /** client.createTable("lr", machines, list);
-            System.out.println(client.readRows("lr", 1000, 2));
-            System.out.println(client.round("lr"));
-
-            /*client.updateRows("lr", 0, list);
+            /*client.createTable("lr", machines, list);
+            client.updateRows("lr", 0, list);
             System.out.println(client.round("lr"));
 
             System.out.println(client.readRows("lr", 0, 2));*/
 
-            /*client.createTable("lr", machines, list);
+            // client.createTable("lr", machines, list);
 
-            for (int i = 0; i < 100; i++) {
+            /*for (int i = 0; i < 100; i++) {
                 while(i != 0 && client.round("lr") == false) {}
                 ArrayList<Double> params = (ArrayList<Double>) client.readRows("lr", i, 0);
                 client.updateRows("lr", i, list);

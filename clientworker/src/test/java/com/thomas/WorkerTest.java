@@ -1,9 +1,12 @@
 package com.thomas;
 
+import com.thomas.models.Node;
 import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.thrift.worker.PSWorkerService;
+import com.thomas.utils.thrift.PSUtils;
 import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
@@ -25,6 +28,8 @@ public class WorkerTest {
         // start a worker and run a job.
         workerTest.startWorker("localhost", 8080, 30000);
 
+        Node node = new Node("localhost", 8000);
+        System.out.println(PSUtils.getParams(node,1000,"lr"));
     }
 
     public void initParameterServer(String host, int port, int timeout) {
@@ -38,7 +43,8 @@ public class WorkerTest {
         TTransport transport = null;
         try {
             transport = new TSocket(host, port, timeout);
-            TProtocol protocol = new TCompactProtocol(transport);
+            // TProtocol protocol = new TCompactProtocol(transport);
+            TProtocol protocol = new TBinaryProtocol(transport);
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
 

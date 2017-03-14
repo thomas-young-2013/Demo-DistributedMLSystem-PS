@@ -9,6 +9,7 @@ import com.thomas.utils.DataInfo;
 import com.thomas.utils.math.MatrixUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
@@ -82,9 +83,10 @@ public class LrWorker extends MlAlgoWorker {
         TTransport transport = null;
         try {
             transport = new TSocket(properties.PSServerId, properties.PSPort, 20000);
-            TProtocol protocol = new TCompactProtocol(transport);
-            client = new ParameterServerService.Client(protocol);
             transport.open();
+            TProtocol protocol = new TBinaryProtocol(transport);
+
+            client = new ParameterServerService.Client(protocol);
 
             lr();
 
@@ -100,11 +102,20 @@ public class LrWorker extends MlAlgoWorker {
     }
 
     public void lr() throws TException {
-
-        for (int i = 0; i < iteNum; i++) {
-            while(i != 0 && client.round(tableId) == false) {}
-            ArrayList<Double> params = (ArrayList<Double>) client.readRows(tableId, i, 0);
-            client.updateRows(tableId, i, getDeltaPrams(params));
+        try {
+            for (int i = 0; i < iteNum; i++) {
+                while (i != 0 && client.round(tableId) == false) {
+                    Thread.sleep(50);
+                }
+                ArrayList<Double> params = (ArrayList<Double>) client.readRows(tableId, i, 0);
+                System.out.println(properties.dataPath + "finish: " + i);
+                while (i != 0 && client.round(tableId) == false) {
+                    Thread.sleep(50);
+                }
+                client.updateRows(tableId, i, getDeltaPrams(params));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
