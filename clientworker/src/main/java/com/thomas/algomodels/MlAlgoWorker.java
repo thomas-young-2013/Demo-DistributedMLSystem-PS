@@ -1,7 +1,5 @@
 package com.thomas.algomodels;
 
-import com.thomas.thrift.server.ParameterServerService;
-
 /**
  * Created by hadoop on 3/11/17.
  */

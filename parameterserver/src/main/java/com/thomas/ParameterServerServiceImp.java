@@ -1,6 +1,7 @@
 package com.thomas;
 
 import com.thomas.models.ParameterServer;
+import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.server.ParameterServerService;
 
 import java.util.ArrayList;
@@ -16,25 +17,17 @@ public class ParameterServerServiceImp implements ParameterServerService.Iface {
         this.parameterServer = new ParameterServer();
     }
 
-    public ArrayList<Double> readRows(String tableId, int rowId, int range) {
-        return parameterServer.readRows(tableId, rowId, range);
+
+    public boolean update(String hostId, String tableId, Carrier carrier) {
+        return false;
     }
 
-    public void updateRows(String tableId, int rowId, List<Double> valVector) {
-        parameterServer.updateRows(tableId, rowId, valVector);
+    public Carrier read(String hostId, String tableId, int t, int extra) {
+        return parameterServer.read(hostId, tableId, t, extra);
     }
 
-    public boolean round(String tableId) {
-        return parameterServer.round(tableId);
+    public boolean create(String tableType, String tableId, List<String> machines, Carrier params) {
+        return parameterServer.createParameterTable(tableType, tableId, machines, params);
     }
 
-    public boolean createTable(String tableId, List<String> machines, List<Double> valVector) {
-        Double []initialArray = new Double[valVector.size()];
-        for (int i=0; i<valVector.size(); i++) {
-            initialArray[i] = valVector.get(i);
-        }
-
-        parameterServer.createParameterTable(machines, tableId, initialArray);
-        return true;
-    }
 }

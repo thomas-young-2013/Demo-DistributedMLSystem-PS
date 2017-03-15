@@ -1,6 +1,5 @@
 package com.thomas;
 
-import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.thrift.worker.PSWorkerService;
 import org.apache.thrift.TException;

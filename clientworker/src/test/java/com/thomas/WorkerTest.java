@@ -1,7 +1,6 @@
 package com.thomas;
 
 import com.thomas.models.Node;
-import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.thrift.worker.PSWorkerService;
 import com.thomas.utils.thrift.PSUtils;
