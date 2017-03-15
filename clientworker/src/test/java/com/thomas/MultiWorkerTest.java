@@ -1,5 +1,7 @@
 package com.thomas;
 
+import com.thomas.thrift.server.Carrier;
+import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.thrift.worker.PSWorkerService;
 import org.apache.thrift.TException;
@@ -11,6 +13,7 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by hadoop on 3/11/17.
@@ -41,9 +44,13 @@ public class MultiWorkerTest {
         list.add(0.0);
         list.add(0.0);
         list.add(0.0);
-        ArrayList<String> machines = new ArrayList<String>();
+        List<String> machines = new ArrayList<String>();
         machines.add("worker1");
         machines.add("worker2");
+        List<List<Double>> list1 = new ArrayList<List<Double>>();
+        list1.add(list);
+        Carrier carrier = new Carrier(0, list1);
+        String SERVER_IP = "worker1";
 
         TTransport transport = null;
         try {
@@ -52,7 +59,7 @@ public class MultiWorkerTest {
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
 
-            client.createTable("lr", machines, list);
+            client.create("BSP", "lr", machines, carrier);
 
             /*System.out.println(client.readRows("lr", 0, 2));
             System.out.println(client.round("lr"));
@@ -81,7 +88,7 @@ public class MultiWorkerTest {
             JobConfig jobConfig = new JobConfig();
             jobConfig.jobKey = 1231231L;
             jobConfig.jobType = "LINEAR_REGRESSION";
-            jobConfig.learningRate = 0.02;
+            jobConfig.learningRate = 0.01;
             jobConfig.dataPath = dataPath;
             jobConfig.iteNum = 1000;
             jobConfig.serverId = "localhost";

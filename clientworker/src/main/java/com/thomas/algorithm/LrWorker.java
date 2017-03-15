@@ -4,6 +4,8 @@ import Jama.Matrix;
 import com.thomas.algomodels.MlAlgoType;
 import com.thomas.algomodels.MlAlgoWorker;
 import com.thomas.algomodels.Properties;
+import com.thomas.thrift.server.Carrier;
+import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.utils.DataInfo;
 import com.thomas.utils.math.MatrixUtils;
 import org.apache.log4j.Logger;
@@ -47,10 +49,11 @@ public class LrWorker extends MlAlgoWorker {
     @Override
     public void init() {
         try {
+
             iteNum = properties.iterationNum;
             lr = properties.learningRate;
             tableId = properties.PSTableId;
-
+            hostId = "worker1";
             DataInfo dataInfo = getDataInfo(properties.dataPath);
             m = dataInfo.rowNum;
             n = dataInfo.colNum;
@@ -102,15 +105,20 @@ public class LrWorker extends MlAlgoWorker {
     public void lr() throws TException {
         try {
             for (int i = 0; i < iteNum; i++) {
-                while (i != 0 && client.round(tableId) == false) {
+                Carrier carrier = client.read(hostId, tableId, i, 2);
+                while (carrier.iterationNum == -1) {
+                    Thread.sleep(50);
+                    carrier = client.read(hostId, tableId, i, 2);
+                }
+
+                ArrayList<Double> params = getDeltaPrams((ArrayList<Double>) carrier.gradients.get(0));
+
+                carrier.gradients.clear();
+                carrier.gradients.add(params);
+                while(client.update(hostId, tableId, carrier) == false) {
                     Thread.sleep(50);
                 }
-                ArrayList<Double> params = (ArrayList<Double>) client.readRows(tableId, i, 0);
-                System.out.println(properties.dataPath + "finish: " + i);
-                while (i != 0 && client.round(tableId) == false) {
-                    Thread.sleep(50);
-                }
-                client.updateRows(tableId, i, getDeltaPrams(params));
+
             }
         } catch (Exception e) {
             e.printStackTrace();

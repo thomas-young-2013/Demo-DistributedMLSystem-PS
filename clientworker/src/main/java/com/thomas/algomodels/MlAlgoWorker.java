@@ -6,6 +6,7 @@ package com.thomas.algomodels;
 public abstract class MlAlgoWorker {
     public MlAlgoType algoType;
     public Properties properties;
+    public String hostId;
 
     public MlAlgoWorker() {}
 

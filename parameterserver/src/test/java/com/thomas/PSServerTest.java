@@ -1,5 +1,7 @@
 package com.thomas;
 
+import com.thomas.thrift.server.Carrier;
+import com.thomas.thrift.server.ParameterServerService;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -8,6 +10,7 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by hadoop on 3/8/17.
@@ -27,8 +30,11 @@ public class PSServerTest {
         list.add(0.1);
         list.add(0.1);
         list.add(0.1);
-        ArrayList<String> machines = new ArrayList<String>();
+        List<String> machines = new ArrayList<String>();
         machines.add("worker1");
+        List<List<Double>> list1 = new ArrayList<List<Double>>();
+        list1.add(list);
+        Carrier carrier = new Carrier(0, list1);
 
         TTransport transport = null;
         try {
@@ -38,23 +44,14 @@ public class PSServerTest {
             TProtocol protocol = new TBinaryProtocol(transport);
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
 
-            /*client.createTable("lr", machines, list);
-            client.updateRows("lr", 0, list);
-            System.out.println(client.round("lr"));
-
-            System.out.println(client.readRows("lr", 0, 2));*/
-
-            // client.createTable("lr", machines, list);
-
-            /*for (int i = 0; i < 100; i++) {
-                while(i != 0 && client.round("lr") == false) {}
-                ArrayList<Double> params = (ArrayList<Double>) client.readRows("lr", i, 0);
-                client.updateRows("lr", i, list);
-            }*/
-
-            for (int i=0; i<1000; i++) {
-                if (i%1==0) System.out.println(client.readRows("lr", i, 2));
-            }
+            // client.create("BSP", "lr", machines, carrier);
+            Carrier carrier1 = client.read(SERVER_IP, "lr", 1000, 2);
+            System.out.println(carrier1.iterationNum);
+            System.out.println(carrier1.gradients);
+            /*client.update(SERVER_IP, "lr", carrier1);
+            carrier1 = client.read(SERVER_IP, "lr", 1, 2);
+            System.out.println(carrier1.iterationNum);
+            System.out.println(carrier1.gradients);*/
 
         } catch (TTransportException e) {
             e.printStackTrace();

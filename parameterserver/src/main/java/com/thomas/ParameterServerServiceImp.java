@@ -19,7 +19,7 @@ public class ParameterServerServiceImp implements ParameterServerService.Iface {
 
 
     public boolean update(String hostId, String tableId, Carrier carrier) {
-        return false;
+        return parameterServer.update(hostId, tableId, carrier);
     }
 
     public Carrier read(String hostId, String tableId, int t, int extra) {

@@ -21,7 +21,7 @@ public class ParameterServer {
     }
 
     public boolean createParameterTable(String tableType, String tableId, List<String> machines, Carrier intialVector) {
-        logger.info("create parameter table: " + tableId);
+        logger.info("create table: " + tableId + " " + tableType);
         boolean result = true;
         try {
             List<List<Double>> initials = intialVector.gradients;
@@ -30,17 +30,14 @@ public class ParameterServer {
 
             AbstractPSTable table;
             if (tableType.startsWith(ParallelType.BSP)) {
-                table = new BSPParameterTable(tableId, machines.size(), dimems, nums, (ArrayList<String>) machines);
+                table = new BSPParameterTable(tableId, machines.size(), dimems, nums,
+                        (ArrayList<String>) machines, initials);
                 // init the initial vector or matrix.
-                table.parameters = new double[nums][dimems];
-                for (int i = 0; i < nums; i++) {
-                    for (int j = 0; j < dimems; j++) {
-                        table.parameters[i][j] = initials.get(i).get(j);
-                    }
-                }
+
             } else {
                 String[] tmp = tableType.split("-");
-                table = new BSPParameterTable(tableId, machines.size(), dimems, nums, (ArrayList<String>) machines);
+                table = new BSPParameterTable(tableId, machines.size(), dimems, nums,
+                        (ArrayList<String>) machines, initials);
             }
 
             tables.put(tableId, table);
@@ -52,7 +49,11 @@ public class ParameterServer {
     }
 
     public Carrier read(String hostId, String tableId, int t, int extra) {
-        return tables.get(tableId).read(hostId, tableId, t, extra);
+        return tables.get(tableId).read(t, extra);
+    }
+
+    public boolean update(String hostId, String tableId, Carrier carrier) {
+        return tables.get(tableId).update(carrier);
     }
 
 

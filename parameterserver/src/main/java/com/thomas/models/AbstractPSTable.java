@@ -30,7 +30,7 @@ public abstract class AbstractPSTable {
         this.curIteration = new AtomicInteger(0);
     }
 
-    public abstract boolean update(String hostId, String tableId, Carrier carrier);
+    public abstract boolean update(Carrier carrier);
 
-    public abstract Carrier read(String hostId, String tableId, int t, int statle);
+    public abstract Carrier read(int t, int statle);
 }
