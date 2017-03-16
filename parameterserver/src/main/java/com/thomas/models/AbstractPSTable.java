@@ -14,6 +14,7 @@ public abstract class AbstractPSTable {
     public int rows;
     public int dimems;
     public int workerNum;
+    public ArrayList<Node> nodes;
 
     public AtomicInteger curIteration;
 
@@ -28,6 +29,7 @@ public abstract class AbstractPSTable {
         this.workers = new ArrayList<String>();
         this.workers.addAll(workers);
         this.curIteration = new AtomicInteger(0);
+        this.nodes = new ArrayList<Node>();
     }
 
     public abstract boolean update(Carrier carrier);

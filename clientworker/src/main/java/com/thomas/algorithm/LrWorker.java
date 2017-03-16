@@ -7,6 +7,7 @@ import com.thomas.algomodels.Properties;
 import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.utils.DataInfo;
+import com.thomas.utils.constant.NodeStatus;
 import com.thomas.utils.math.MatrixUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -102,6 +103,7 @@ public class LrWorker extends MlAlgoWorker {
             if (null != transport) {
                 transport.close();
             }
+            workerStatus = NodeStatus.FINISHED;
         }
     }
 
@@ -138,6 +140,11 @@ public class LrWorker extends MlAlgoWorker {
         ArrayList<Double> deltaList = new ArrayList<Double>(n);
         for (int i=0; i<n; i++) deltaList.add(deltaArray[i][0]);
         return deltaList;
+    }
+
+    @Override
+    public void clock(Carrier carrier) {
+
     }
 
 }

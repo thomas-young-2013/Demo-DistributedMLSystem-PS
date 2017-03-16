@@ -1,11 +1,15 @@
 package com.thomas.models;
 
 import com.thomas.thrift.server.Carrier;
+import com.thomas.thrift.worker.PSWorkerService;
 import org.apache.log4j.Logger;
+import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.transport.TSocket;
+import org.apache.thrift.transport.TTransport;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
 /**
@@ -18,6 +22,7 @@ public class SSPParameterTable extends AbstractPSTable {
     public int curIndex;
 
     public AtomicIntegerArray updateRecorder;
+
     private Logger logger = Logger.getLogger(this.getClass());
 
     public SSPParameterTable() {
@@ -40,6 +45,12 @@ public class SSPParameterTable extends AbstractPSTable {
         int []arr = new int[staleValue+1];
         this.updateRecorder = new AtomicIntegerArray(arr);
 
+        // init the nodes.
+        for (String hostId: workers) {
+            String []tmp = hostId.split(":");
+            if (tmp.length < 2) logger.error("SSP table initialization failed!");
+            nodes.add(new Node(tmp[0], Integer.parseInt(tmp[1])));
+        }
     }
 
     @Override
@@ -96,6 +107,16 @@ public class SSPParameterTable extends AbstractPSTable {
 
                 updateRecorder.set(curIter%(1+staleValue), 0);
 
+                // keep the parameter
+                Carrier carrier2 = new Carrier();
+                carrier2.iterationNum = curIter;
+                carrier2.gradients = new ArrayList<List<Double>>();
+                for (int i=0; i<rows; i++) {
+                    List<Double> list = new ArrayList<Double>();
+                    for (int j=0; j<dimems; j++) list.add(parameters[(curIndex + i)][j]);
+                    carrier2.gradients.add(list);
+                }
+
                 // push the parameter to the next iteration.
                 Carrier carrier1 = new Carrier();
                 carrier1.iterationNum = curIteration.incrementAndGet();
@@ -121,7 +142,9 @@ public class SSPParameterTable extends AbstractPSTable {
                 }
 
                 curIndex += rows;
+
                 // push the newest parameter to all workers.
+                clock(nodes, carrier2);
 
             }
 
@@ -130,5 +153,19 @@ public class SSPParameterTable extends AbstractPSTable {
             result = false;
         }
         return result;
+    }
+
+    private void clock(ArrayList<Node> nodes, Carrier carrier) {
+        try {
+            for (Node node: nodes) {
+                TTransport transport = new TSocket(node.hostId, node.port);
+                transport.open();
+                TProtocol protocol = new TBinaryProtocol(transport);
+                PSWorkerService.Client client = new PSWorkerService.Client(protocol);
+                client.clock(tableId, carrier);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

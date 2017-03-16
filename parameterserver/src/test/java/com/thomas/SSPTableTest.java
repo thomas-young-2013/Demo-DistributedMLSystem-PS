@@ -1,6 +1,5 @@
 package com.thomas;
 
-import com.thomas.models.SSPParameterTable;
 import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.server.ParameterServerService;
 import org.apache.thrift.TException;
@@ -27,16 +26,6 @@ public class SSPTableTest {
     }
 
     public void run() {
-        ArrayList<Double> list = new ArrayList<Double>();
-        list.add(0.1);
-        list.add(0.1);
-        list.add(0.1);
-        List<String> machines = new ArrayList<String>();
-        machines.add("worker1");
-        machines.add("worker2");
-        List<List<Double>> list1 = new ArrayList<List<Double>>();
-        list1.add(list);
-        Carrier carrier = new Carrier(0, list1);
 
         TTransport transport = null;
         try {
@@ -46,6 +35,16 @@ public class SSPTableTest {
             TProtocol protocol = new TBinaryProtocol(transport);
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
 
+            /*ArrayList<Double> list = new ArrayList<Double>();
+            list.add(0.1);
+            list.add(0.1);
+            list.add(0.1);
+            List<String> machines = new ArrayList<String>();
+            machines.add("worker1");
+            machines.add("worker2");
+            List<List<Double>> list1 = new ArrayList<List<Double>>();
+            list1.add(list);
+            Carrier carrier = new Carrier(0, list1);*/
 
             // client.create("SSP:3", "lr", machines, carrier);
             /*Carrier carrier1 = client.read(SERVER_IP, "lr", 1, 3);
@@ -57,7 +56,29 @@ public class SSPTableTest {
             carrier2.iterationNum = 6;
             client.update(SERVER_IP, "lr", carrier2);*/
 
-            Carrier carrier3 = client.read(SERVER_IP, "lr", 3, 3);
+            /*
+            * for two dimems
+            * */
+            ArrayList<Double> list = new ArrayList<Double>();
+            list.add(0.1);
+            list.add(0.1);
+            list.add(0.1);
+            List<String> machines = new ArrayList<String>();
+            machines.add("worker1");
+            machines.add("worker2");
+            List<List<Double>> list1 = new ArrayList<List<Double>>();
+            list1.add(list);
+            list1.add(list);
+            Carrier carrier = new Carrier(0, list1);
+
+            // create table.
+            /*client.create("SSP:3", "lr", machines, carrier);
+            Carrier carrier1 = client.read(SERVER_IP, "lr", 0, 3);
+            System.out.println(carrier1);*/
+            /*carrier.iterationNum = 4;
+            client.update(SERVER_IP, "lr", carrier);*/
+
+            Carrier carrier3 = client.read(SERVER_IP, "lr", 3, 1);
             System.out.println(carrier3);
 
         } catch (TTransportException e) {

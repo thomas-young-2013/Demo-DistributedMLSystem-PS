@@ -1,5 +1,6 @@
 package com.thomas;
 
+import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.thrift.worker.PSWorkerService;
 
@@ -19,5 +20,9 @@ public class PSWorkerImp implements PSWorkerService.Iface {
 
     public boolean isAlive() {
         return true;
+    }
+
+    public void clock(String tableId, Carrier carrier) {
+        psWorker.clock(tableId, carrier);
     }
 }

@@ -10,4 +10,6 @@ public class Properties {
     public int PSPort;
     public String PSTableId;
     public String dataPath;
+    public String parallelType;
+    public int stale;
 }

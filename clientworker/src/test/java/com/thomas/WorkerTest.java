@@ -71,7 +71,7 @@ public class WorkerTest {
         TTransport transport = null;
         try {
             transport = new TSocket(host, port, timeout);
-            TProtocol protocol = new TCompactProtocol(transport);
+            TProtocol protocol = new TBinaryProtocol(transport);
             PSWorkerService.Client client = new PSWorkerService.Client(protocol);
             transport.open();
 
