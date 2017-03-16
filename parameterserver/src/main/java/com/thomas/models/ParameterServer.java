@@ -33,7 +33,7 @@ public class ParameterServer {
                 table = new BSPParameterTable(tableId, machines.size(), dimems, nums,
                         (ArrayList<String>) machines, initials);
             } else {
-                String[] tmp = tableType.split("-");
+                String[] tmp = tableType.split(":");
                 if (tmp.length >= 2 && tmp[0].startsWith(ParallelType.SSP)) {
                     table = new SSPParameterTable(tableId, Integer.parseInt(tmp[1]), machines.size(), dimems, nums,
                             (ArrayList<String>) machines, initials);

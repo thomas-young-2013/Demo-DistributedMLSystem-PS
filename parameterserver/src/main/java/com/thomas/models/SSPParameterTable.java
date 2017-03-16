@@ -6,15 +6,18 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 /**
  * Created by hadoop on 3/15/17.
  */
 public class SSPParameterTable extends AbstractPSTable {
     public int staleValue;
-    public int curIndex;
-    public AtomicInteger curIterCount;
 
+    // the start of current parameter index
+    public int curIndex;
+
+    public AtomicIntegerArray updateRecorder;
     private Logger logger = Logger.getLogger(this.getClass());
 
     public SSPParameterTable() {
@@ -26,7 +29,6 @@ public class SSPParameterTable extends AbstractPSTable {
         super(tableId, workerNum, dimems, rows, workers);
         this.staleValue = staleValue;
         this.curIndex = 0;
-        this.curIterCount = new AtomicInteger(0);
 
         // we init the parameters in the create table phase.
         parameters = new double[rows + staleValue*rows][dimems];
@@ -35,6 +37,9 @@ public class SSPParameterTable extends AbstractPSTable {
                 parameters[i][j] = initials.get(i).get(j);
             }
         }
+        int []arr = new int[staleValue+1];
+        this.updateRecorder = new AtomicIntegerArray(arr);
+
     }
 
     @Override
@@ -43,10 +48,14 @@ public class SSPParameterTable extends AbstractPSTable {
         int curIter = curIteration.get();
         if (stale <= staleValue && t >= curIter && t + stale <= curIter + staleValue) {
             carrier.gradients = new ArrayList<List<Double>>();
+            carrier.iterationNum = t;
             logger.info("start stale reading: <" + t + "> iteration, stale value: " + stale);
-            for (int i=0; i<stale+1; i++) {
+
+            int totalRows = (1+staleValue)*rows;
+
+            for (int i=0; i<(1+stale)*rows; i++) {
                 List<Double> list = new ArrayList<Double>();
-                int row = (t - curIter + curIndex + i) % (1 + staleValue);
+                int row = ((t - curIter)*rows + curIndex + i) % totalRows;
                 for (int j=0; j<dimems; j++) list.add(parameters[row][j]);
                 carrier.gradients.add(list);
                 logger.info(i + " read: " + list);
@@ -63,17 +72,17 @@ public class SSPParameterTable extends AbstractPSTable {
         boolean result = true;
         try {
             int iterationId = carrier.iterationNum;
+            int curIter = curIteration.get();
             List<List<Double>> gradients = carrier.gradients;
-            if (iterationId >= curIteration.get() && gradients!= null) {
+            if (iterationId < curIteration.get() || iterationId > staleValue+curIter || gradients== null) {
                 return false;
             }
             int updateRowNums = gradients.size();
-            int curIter = curIteration.get();
             logger.info("start update: <" + iterationId + "> stale value: " + (updateRowNums - 1));
-
+            int totalRows = (1 + staleValue)*rows;
             for (int i = 0; i < updateRowNums; i++) {
                 for (int j = 0; j < dimems; j++) {
-                    this.parameters[(iterationId - curIter + curIndex + i) % (1 + staleValue)][j]
+                    this.parameters[((iterationId - curIter)*rows + curIndex + i) % totalRows][j]
                             += gradients.get(i).get(j);
                     logger.info("update is: " + gradients.get(i));
                 }
@@ -81,7 +90,11 @@ public class SSPParameterTable extends AbstractPSTable {
             logger.info("end update: <" + iterationId + "> stale value: " + (updateRowNums - 1));
 
             // increase the count and decide whether the end.
-            if (curIterCount.incrementAndGet() == workerNum) {
+            updateRecorder.incrementAndGet(iterationId%(1+staleValue));
+
+            if (updateRecorder.get(curIter%(1+staleValue)) == workerNum) {
+
+                updateRecorder.set(curIter%(1+staleValue), 0);
 
                 // push the parameter to the next iteration.
                 Carrier carrier1 = new Carrier();
@@ -92,9 +105,9 @@ public class SSPParameterTable extends AbstractPSTable {
                 for (int i=0; i<rows; i++ ) {
                     List<Double> list = new ArrayList<Double>();
                     for (int j=0; j<dimems; j++) {
-                        double tmp = parameters[(i+curIndex + rows)%(rows*(staleValue+1))][j];
+                        double tmp = parameters[(i+curIndex + rows) % totalRows][j];
                         tmp += parameters[i+curIndex][j];
-                        parameters[(i+curIndex + rows)%(rows*(staleValue+1))][j] = tmp;
+                        parameters[(i+curIndex + rows) % totalRows][j] = tmp;
                         list.add(tmp);
                     }
                     carrier1.gradients.add(list);
@@ -108,7 +121,6 @@ public class SSPParameterTable extends AbstractPSTable {
                 }
 
                 curIndex += rows;
-
                 // push the newest parameter to all workers.
 
             }
