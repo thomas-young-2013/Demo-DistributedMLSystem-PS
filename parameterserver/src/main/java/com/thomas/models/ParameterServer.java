@@ -28,18 +28,20 @@ public class ParameterServer {
             int dimems = initials.get(0).size();
             int nums = initials.size();
 
-            AbstractPSTable table;
+            AbstractPSTable table = null;
             if (tableType.startsWith(ParallelType.BSP)) {
                 table = new BSPParameterTable(tableId, machines.size(), dimems, nums,
                         (ArrayList<String>) machines, initials);
-                // init the initial vector or matrix.
-
             } else {
                 String[] tmp = tableType.split("-");
-                table = new BSPParameterTable(tableId, machines.size(), dimems, nums,
-                        (ArrayList<String>) machines, initials);
-            }
+                if (tmp.length >= 2 && tmp[0].startsWith(ParallelType.SSP)) {
+                    table = new SSPParameterTable(tableId, Integer.parseInt(tmp[1]), machines.size(), dimems, nums,
+                            (ArrayList<String>) machines, initials);
+                } else {
+                    logger.error("Parallel Type Not Supported!");
+                }
 
+            }
             tables.put(tableId, table);
         } catch (Exception e) {
             result = false;
@@ -55,39 +57,5 @@ public class ParameterServer {
     public boolean update(String hostId, String tableId, Carrier carrier) {
         return tables.get(tableId).update(carrier);
     }
-
-
-
-    /*public ArrayList<Double> readRows(String tableId, int rowId, int range) {
-
-        Double[] data = tables.get(tableId).getRow(rowId);
-        ArrayList<Double> list = new ArrayList<Double>();
-        for (double d: data) list.add(d);
-
-        logger.info("read table row: " + tableId + ", row id : " + rowId+ " " + list);
-        System.out.println("read table row: " + tableId + ", row id : " + rowId+ " " + list);
-
-        return list;
-    }
-
-    public void updateRows(String tableId, int rowId, List<Double> valVector) {
-        logger.info("update table row:" + tableId + ", rowid:" + rowId+ " " + valVector);
-
-        metaData.get(tableId).updateNum.getAndIncrement();
-        Double [] delta = new Double[valVector.size()];
-        for (int i=0; i<valVector.size(); i++) delta[i] = valVector.get(i);
-        tables.get(tableId).updateRow(rowId, delta);
-
-        // if some iteration completed, initialize the next one parameter.
-        if (metaData.get(tableId).isRoundOver()) {
-            tables.get(tableId).initNextRow(rowId);
-        }
-    }
-
-    public boolean round(String tableId) {
-        // System.out.println("round received. num: "+metaData.get(tableId).recieverNum.get());
-        // logger.info("round received. num: "+metaData.get(tableId).recieverNum.get());
-        return metaData.get(tableId).isRoundOver();
-    }*/
 
 }

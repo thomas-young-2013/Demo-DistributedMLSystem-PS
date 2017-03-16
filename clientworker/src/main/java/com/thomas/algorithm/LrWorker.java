@@ -89,7 +89,10 @@ public class LrWorker extends MlAlgoWorker {
 
             client = new ParameterServerService.Client(protocol);
 
+            long startTime = System.currentTimeMillis();
             lr();
+            long endTime = System.currentTimeMillis();
+            System.out.println("it costs: " + (endTime-startTime)/1000.0 + "s");
 
         } catch (TTransportException e) {
             e.printStackTrace();
@@ -107,7 +110,7 @@ public class LrWorker extends MlAlgoWorker {
             for (int i = 0; i < iteNum; i++) {
                 Carrier carrier = client.read(hostId, tableId, i, 2);
                 while (carrier.iterationNum == -1) {
-                    Thread.sleep(50);
+                    Thread.sleep(1);
                     carrier = client.read(hostId, tableId, i, 2);
                 }
 
@@ -116,7 +119,7 @@ public class LrWorker extends MlAlgoWorker {
                 carrier.gradients.clear();
                 carrier.gradients.add(params);
                 while(client.update(hostId, tableId, carrier) == false) {
-                    Thread.sleep(50);
+                    Thread.sleep(1);
                 }
 
             }

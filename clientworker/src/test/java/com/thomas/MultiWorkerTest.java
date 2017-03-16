@@ -1,9 +1,11 @@
 package com.thomas;
 
+import com.thomas.models.Node;
 import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.thrift.worker.PSWorkerService;
+import com.thomas.utils.thrift.PSUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
@@ -35,8 +37,28 @@ public class MultiWorkerTest {
                 workerTest.startWorker("localhost", 8081, 30000, "/home/hadoop/Desktop/train2.txt");
             }
         };
-        new Thread(s1).start();
-        new Thread(s2).start();
+        Runnable s3 = new Runnable() {
+            public void run() {
+                workerTest.startWorker("localhost", 8082, 30000, "/home/hadoop/Desktop/train3.txt");
+            }
+        };
+        Thread t1 = new Thread(s1);
+        Thread t2 = new Thread(s2);
+        Thread t3 = new Thread(s3);
+        t1.start();
+        t2.start();
+        t3.start();
+        try {
+            t1.join();
+            t2.join();
+            t3.join();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            Node node = new Node("localhost", 8000);
+            System.out.println(PSUtils.getParams(node,1000,"lr"));
+        }
+
     }
 
     public void initParameterServer(String host, int port, int timeout) {
@@ -47,6 +69,7 @@ public class MultiWorkerTest {
         List<String> machines = new ArrayList<String>();
         machines.add("worker1");
         machines.add("worker2");
+        machines.add("worker3");
         List<List<Double>> list1 = new ArrayList<List<Double>>();
         list1.add(list);
         Carrier carrier = new Carrier(0, list1);
@@ -88,7 +111,7 @@ public class MultiWorkerTest {
             JobConfig jobConfig = new JobConfig();
             jobConfig.jobKey = 1231231L;
             jobConfig.jobType = "LINEAR_REGRESSION";
-            jobConfig.learningRate = 0.01;
+            jobConfig.learningRate = 0.007;
             jobConfig.dataPath = dataPath;
             jobConfig.iteNum = 1000;
             jobConfig.serverId = "localhost";
