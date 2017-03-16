@@ -23,17 +23,16 @@ service PMasterService {
   i64 createJob(
     1:JobInfo jobInfo
   ),
-  
+
   JobResult getJobResult(
     1:i64 jobId
   ),
-  
+
   bool getJobDone(
     1:string hostId,
     2:i64 jobId,
     3:ExecInfo execInfo
   ),
-  
+
   bool isAlive()
 }
-

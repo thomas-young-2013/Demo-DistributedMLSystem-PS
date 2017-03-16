@@ -1,26 +1,27 @@
 namespace java com.thomas.thrift.server
-
-service ParameterServerService {
-  list<double> readRows(
-    1:string tableIdentifier,
-    2:i32 rowId,
-    3:i32 extra
-  ),
-  
-  void updateRows(
-    1:string tableIdentifier,
-    2:i32 rowId,
-    3:list<double> values
-  ),
-
-  bool round(
-    1:string tableIdentifier
-  ),
-
-  bool createTable(
-    1:string tableId,
-    2:list<string> machines,
-    3:list<double> initialVal
-  )
+struct Carrier {
+   1: i32 iterationNum,
+   2: list<list<double>> gradients
 }
 
+service ParameterServerService {
+  bool update(
+    1: string hostId,
+    2: string tableId,
+    3: Carrier carrier
+  ),
+
+  Carrier read(
+    1: string hostId,
+    2: string tableId,
+    3: i32 t,
+    4: i32 extra
+  ),
+
+  bool create(
+    1: string tableType,
+    2: string tableId,
+    3: list<string> machines,
+    4: Carrier initials
+  )
+}
