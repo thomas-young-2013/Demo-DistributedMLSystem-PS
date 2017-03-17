@@ -4,10 +4,12 @@ import Jama.Matrix;
 import com.thomas.algomodels.MlAlgoType;
 import com.thomas.algomodels.MlAlgoWorker;
 import com.thomas.algomodels.Properties;
+import com.thomas.algomodels.SSPClientBuffer;
 import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.utils.DataInfo;
 import com.thomas.utils.constant.NodeStatus;
+import com.thomas.utils.constant.ParallelType;
 import com.thomas.utils.math.MatrixUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -18,6 +20,7 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.thomas.utils.DataReader.getDataInfo;
 import static com.thomas.utils.DataReader.getTrainData;
@@ -28,6 +31,7 @@ import static com.thomas.utils.DataReader.getTrainData;
 public class LrWorker extends MlAlgoWorker {
 
     private ParameterServerService.Client client;
+    private SSPClientBuffer localStorage;
 
     private double lr;
     private int iteNum, m, n;
@@ -55,6 +59,9 @@ public class LrWorker extends MlAlgoWorker {
             lr = properties.learningRate;
             tableId = properties.PSTableId;
             hostId = "worker1";
+
+            localStorage = new SSPClientBuffer(properties.rowNum, properties.dimems, properties.stale);
+
             DataInfo dataInfo = getDataInfo(properties.dataPath);
             m = dataInfo.rowNum;
             n = dataInfo.colNum;
@@ -91,7 +98,8 @@ public class LrWorker extends MlAlgoWorker {
             client = new ParameterServerService.Client(protocol);
 
             long startTime = System.currentTimeMillis();
-            lr();
+            if (properties.parallelType.equals(ParallelType.BSP)) lr();
+            if (properties.parallelType.equals(ParallelType.SSP)) lrSSP();
             long endTime = System.currentTimeMillis();
             System.out.println("it costs: " + (endTime-startTime)/1000.0 + "s");
 
@@ -104,6 +112,61 @@ public class LrWorker extends MlAlgoWorker {
                 transport.close();
             }
             workerStatus = NodeStatus.FINISHED;
+        }
+    }
+    /*
+    * function READPARAMFROMSERVER(t)
+        if t >= cur_iteration + stale_value then
+          sleep until cur_iteration in server increased and get the newest parameters.
+        end if
+        if cur_iteration_parameter not in local then
+          get it from the remote
+        end if
+        return cur_iteraion_parameter add sum of local_gradient_updates
+
+      function PUSHTOSERVER(t)
+        if t < cur_iteration + stale_value then
+          update the gradients to server in ASYNC
+        end if
+    *
+    * */
+
+    public void read() throws Exception {
+        if (localStorage.exceed()) {
+            Thread.sleep(1);
+        }
+        if (localStorage.localIter == localStorage.globalIter) {
+            Carrier carrier = client.read(hostId, tableId, localStorage.localIter, localStorage.stale);
+            localStorage.replace(carrier);
+        }
+    }
+
+    public void train() {
+        // train it and store it in buffer.
+        localStorage.set(getDeltaPrams(localStorage.getParamWithLocalUpdate()));
+    }
+
+    public void update() throws TException {
+        ArrayList<Double> params = localStorage.getParamWithLocalUpdate();
+        List<List<Double>> data = new ArrayList<List<Double>>();
+        data.add(params);
+        Carrier carrier = new Carrier(localStorage.localIter, data);
+        while (client.update(hostId, tableId, carrier) == false) {}
+    }
+
+    public void lrSSP() throws TException {
+        try {
+            for (int i=0; i<iteNum; i++) {
+                read();
+
+                if (i != localStorage.localIter) throw new Exception("Wrong arised!");
+
+                train();
+
+                update();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

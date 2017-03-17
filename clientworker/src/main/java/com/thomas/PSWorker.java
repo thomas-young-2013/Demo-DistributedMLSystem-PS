@@ -30,6 +30,8 @@ public class PSWorker {
         properties.dataPath = jobConfig.dataPath;
         properties.parallelType = jobConfig.parallelType;
         properties.stale = jobConfig.stale;
+        properties.rowNum = jobConfig.rowNum;
+        properties.dimems = jobConfig.dimems;
 
         MlAlgoType mlAlgoType = MlAlgoType.fromString(jobConfig.getJobType());
         MlAlgoWorker mlAlgoWorker = WorkerFactory.getWorker(mlAlgoType, properties);

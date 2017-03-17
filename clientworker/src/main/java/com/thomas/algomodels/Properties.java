@@ -12,4 +12,6 @@ public class Properties {
     public String dataPath;
     public String parallelType;
     public int stale;
+    public int rowNum;
+    public int dimems;
 }
