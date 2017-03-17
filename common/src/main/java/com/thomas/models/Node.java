@@ -15,4 +15,13 @@ public class Node {
         this.port = port;
         this.status = NodeStatus.RUNNING;
     }
+
+    @Override
+    public String toString() {
+        return "Node{" +
+                "hostId='" + hostId + '\'' +
+                ", port=" + port +
+                ", status=" + status +
+                '}';
+    }
 }

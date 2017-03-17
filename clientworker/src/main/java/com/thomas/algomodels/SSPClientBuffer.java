@@ -1,6 +1,7 @@
 package com.thomas.algomodels;
 
 import com.thomas.thrift.server.Carrier;
+import com.thomas.utils.math.ListUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,9 +23,9 @@ public class SSPClientBuffer {
         this.dimems = dimems;
         this.stale = stale;
         this.globalIter = 0;
-        this.localIter = -1;
+        this.localIter = 0;
         this.buffer = new ArrayList<List<Double>>();
-        for (int i=0; i<stale+1; i++) this.buffer.add(new ArrayList<Double>());
+        for (int i=0; i<stale+1; i++) this.buffer.add(ListUtils.init(dimems, 0.0));
     }
 
     @Override
@@ -43,13 +44,9 @@ public class SSPClientBuffer {
             return (ArrayList<Double>) buffer.get(localIter%(stale+1));
         }
 
-        int index = (globalIter%(stale+1))*rowNum;
         ArrayList<Double> result = new ArrayList<Double>();
-        for (int i=0; i<rowNum*(localIter-globalIter + 1); i++) {
-            for (int j=0; j<dimems; j++) {
-                int tmp = (index + i) % ((stale+1)*rowNum);
-                result.set(j, result.get(j) + buffer.get(tmp).get(j));
-            }
+        for (int i=globalIter; i<localIter; i++) {
+            ListUtils.add(result, buffer.get( i % (stale + 1) ));
         }
         return result;
     }
@@ -69,4 +66,17 @@ public class SSPClientBuffer {
     public void set(ArrayList<Double> list) {
         buffer.set(localIter%(stale+1), list);
     }
+
+    public void add(Carrier carrier) {
+        ListUtils.add(buffer.get(globalIter%(stale+1)), carrier.gradients.get(0));
+    }
+
+    public void add(ArrayList<Double> list) {
+        ListUtils.add(buffer.get(localIter%(stale+1)), list);
+    }
+
+    public void reset() {
+        buffer.set(globalIter%(stale+1), ListUtils.init(dimems, 0.0));
+    }
+
 }

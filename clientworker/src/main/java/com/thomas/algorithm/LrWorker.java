@@ -37,6 +37,7 @@ public class LrWorker extends MlAlgoWorker {
     private int iteNum, m, n;
     private Matrix X, A, y;
     private String tableId;
+    private ArrayList<Double> delta;
 
     private Logger logger = Logger.getLogger(this.getClass());
 
@@ -61,6 +62,11 @@ public class LrWorker extends MlAlgoWorker {
             hostId = "worker1";
 
             localStorage = new SSPClientBuffer(properties.rowNum, properties.dimems, properties.stale);
+            delta = new ArrayList<Double>();
+
+            /*
+            * about Linear Regression Computation
+            * */
 
             DataInfo dataInfo = getDataInfo(properties.dataPath);
             m = dataInfo.rowNum;
@@ -114,44 +120,80 @@ public class LrWorker extends MlAlgoWorker {
             workerStatus = NodeStatus.FINISHED;
         }
     }
-    /*
-    * function READPARAMFROMSERVER(t)
-        if t >= cur_iteration + stale_value then
-          sleep until cur_iteration in server increased and get the newest parameters.
-        end if
-        if cur_iteration_parameter not in local then
-          get it from the remote
-        end if
-        return cur_iteraion_parameter add sum of local_gradient_updates
-
-      function PUSHTOSERVER(t)
-        if t < cur_iteration + stale_value then
-          update the gradients to server in ASYNC
-        end if
-    *
-    * */
 
     public void read() throws Exception {
-        if (localStorage.exceed()) {
+        // if exceed, wait for the other workers.
+        while (localStorage.exceed()) {
             Thread.sleep(1);
         }
+
+        // if local iteration > global iteration, read it from local buffer instead of network.
         if (localStorage.localIter == localStorage.globalIter) {
-            Carrier carrier = client.read(hostId, tableId, localStorage.localIter, localStorage.stale);
-            localStorage.replace(carrier);
+            Carrier carrier = client.read(hostId, tableId, localStorage.localIter, 0);
+            localStorage.set((ArrayList<Double>) carrier.gradients.get(0));
         }
     }
 
     public void train() {
         // train it and store it in buffer.
-        localStorage.set(getDeltaPrams(localStorage.getParamWithLocalUpdate()));
+        ArrayList<Double> params = localStorage.getParamWithLocalUpdate();
+        if (params.size() == 0) {
+            logger.error("parameter size error!");
+        }
+        delta = getDeltaPrams(params);
+        localStorage.add(delta);
     }
 
     public void update() throws TException {
-        ArrayList<Double> params = localStorage.getParamWithLocalUpdate();
+        ArrayList<Double> params;
+        if (localStorage.localIter == localStorage.globalIter) {
+            params = delta;
+        } else {
+            params = localStorage.getParamWithLocalUpdate();
+        }
         List<List<Double>> data = new ArrayList<List<Double>>();
         data.add(params);
         Carrier carrier = new Carrier(localStorage.localIter, data);
-        while (client.update(hostId, tableId, carrier) == false) {}
+
+        // update the parameter at most 3 times.
+        int count = 0;
+        while (client.update(hostId, tableId, carrier) == false) {
+            count++;
+            if (count == 3) break;
+        }
+
+        /*
+        * TO DO LIST
+        * */
+
+        // if update failed. in some way, it does not matter.
+        if (count == 3) {
+            // maybe this is the straggler.
+            if (localStorage.localIter == localStorage.globalIter) {
+                logger.error("local iter == global iter: update failed");
+            } else {
+                logger.error("local iter == global iter: update failed");
+            }
+        }
+
+        // finish updating to the remote, step into next iteration.
+        localStorage.localIter++;
+    }
+
+    @Override
+    public void clock(Carrier carrier) {
+        try {
+            logger.info("finish iter " + carrier.iterationNum + "with param: " + carrier.gradients.get(0));
+
+            // reset the parameter list.
+            localStorage.reset();
+
+            // update the global iteration number.
+            localStorage.globalIter = carrier.iterationNum + 1;
+            localStorage.add(carrier);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void lrSSP() throws TException {
@@ -203,11 +245,6 @@ public class LrWorker extends MlAlgoWorker {
         ArrayList<Double> deltaList = new ArrayList<Double>(n);
         for (int i=0; i<n; i++) deltaList.add(deltaArray[i][0]);
         return deltaList;
-    }
-
-    @Override
-    public void clock(Carrier carrier) {
-
     }
 
 }

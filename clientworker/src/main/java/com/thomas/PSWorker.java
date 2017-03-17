@@ -14,7 +14,7 @@ import java.util.HashMap;
  * Created by hadoop on 3/11/17.
  */
 public class PSWorker {
-    private HashMap<String, MlAlgoWorker> workerMap;
+    private static HashMap<String, MlAlgoWorker> workerMap;
 
     public PSWorker() {
         workerMap = new HashMap<String, MlAlgoWorker>();
@@ -35,10 +35,11 @@ public class PSWorker {
 
         MlAlgoType mlAlgoType = MlAlgoType.fromString(jobConfig.getJobType());
         MlAlgoWorker mlAlgoWorker = WorkerFactory.getWorker(mlAlgoType, properties);
+        workerMap.put(jobConfig.tableId, mlAlgoWorker);
         mlAlgoWorker.run();
     }
 
-    public void clock(String tableId, Carrier carrier) {
+    public static void clock(String tableId, Carrier carrier) {
         workerMap.get(tableId).clock(carrier);
     }
 }

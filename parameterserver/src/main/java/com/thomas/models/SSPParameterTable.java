@@ -95,8 +95,8 @@ public class SSPParameterTable extends AbstractPSTable {
                 for (int j = 0; j < dimems; j++) {
                     this.parameters[((iterationId - curIter)*rows + curIndex + i) % totalRows][j]
                             += gradients.get(i).get(j);
-                    logger.info("update is: " + gradients.get(i));
                 }
+                logger.info("update is: " + gradients.get(i));
             }
             logger.info("end update: <" + iterationId + "> stale value: " + (updateRowNums - 1));
 
@@ -158,6 +158,7 @@ public class SSPParameterTable extends AbstractPSTable {
     private void clock(ArrayList<Node> nodes, Carrier carrier) {
         try {
             for (Node node: nodes) {
+                logger.info("Start clock: " + node);
                 TTransport transport = new TSocket(node.hostId, node.port);
                 transport.open();
                 TProtocol protocol = new TBinaryProtocol(transport);

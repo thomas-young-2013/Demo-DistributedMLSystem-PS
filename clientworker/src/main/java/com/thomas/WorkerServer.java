@@ -1,6 +1,7 @@
 package com.thomas;
 
 import com.thomas.thrift.worker.PSWorkerService;
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TSimpleServer;
@@ -22,6 +23,9 @@ public class WorkerServer {
     private static PSWorkerService.Processor processor;
 
     public static void init(String []args) {
+
+        PropertyConfigurator.configure("config/worker-log4j.properties");
+
         // init the config.
         props = new HashMap<String, String>();
         for (String str: args) {

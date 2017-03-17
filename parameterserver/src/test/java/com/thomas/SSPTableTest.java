@@ -59,7 +59,7 @@ public class SSPTableTest {
             /*
             * for two dimems
             * */
-            ArrayList<Double> list = new ArrayList<Double>();
+            /*ArrayList<Double> list = new ArrayList<Double>();
             list.add(0.1);
             list.add(0.1);
             list.add(0.1);
@@ -69,7 +69,7 @@ public class SSPTableTest {
             List<List<Double>> list1 = new ArrayList<List<Double>>();
             list1.add(list);
             list1.add(list);
-            Carrier carrier = new Carrier(0, list1);
+            Carrier carrier = new Carrier(0, list1);*/
 
             // create table.
             /*client.create("SSP:3", "lr", machines, carrier);
@@ -78,7 +78,7 @@ public class SSPTableTest {
             /*carrier.iterationNum = 4;
             client.update(SERVER_IP, "lr", carrier);*/
 
-            Carrier carrier3 = client.read(SERVER_IP, "lr", 3, 1);
+            Carrier carrier3 = client.read(SERVER_IP, "lr", 20, 0);
             System.out.println(carrier3);
 
         } catch (TTransportException e) {
