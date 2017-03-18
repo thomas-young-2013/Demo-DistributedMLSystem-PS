@@ -84,7 +84,6 @@ public class SSPClientBuffer {
     public void reset() {
         buffer.set(globalIter%(stale+1), ListUtils.init(dimems, 0.0));
     }
-
     // reset the some fixed iteration.
     public void reset(int index) {
         buffer.set(index%(stale+1), ListUtils.init(dimems, 0.0));

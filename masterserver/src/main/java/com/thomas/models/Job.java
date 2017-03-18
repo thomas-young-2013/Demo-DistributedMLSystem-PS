@@ -44,6 +44,7 @@ public class Job {
 
     public ArrayList<Double> getParamsResult() {
         Node node = parameterServers.get(0);
-        return PSUtils.getParams(node, iteNum, tables.get(0).tableId);
+        // return PSUtils.getParams(node, iteNum, tables.get(0).tableId, 2);
+        return null;
     }
 }

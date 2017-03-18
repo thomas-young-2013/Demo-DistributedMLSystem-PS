@@ -78,7 +78,7 @@ public class SSPTableTest {
             /*carrier.iterationNum = 4;
             client.update(SERVER_IP, "lr", carrier);*/
 
-            Carrier carrier3 = client.read(SERVER_IP, "lr", 20, 0);
+            Carrier carrier3 = client.read(SERVER_IP, "lr", 22, 3);
             System.out.println(carrier3);
 
         } catch (TTransportException e) {

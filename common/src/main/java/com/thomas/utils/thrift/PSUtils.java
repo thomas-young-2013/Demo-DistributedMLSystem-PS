@@ -4,6 +4,7 @@ import com.thomas.models.Node;
 import com.thomas.models.PSTable;
 import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.server.ParameterServerService;
+import com.thomas.utils.constant.DefaultConstant;
 import com.thomas.utils.constant.ParallelType;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -49,9 +50,9 @@ public class PSUtils {
         }
     }
 
-    public static ArrayList<Double> getParams(Node node, int iteNum, String tableId) {
+    public static ArrayList<ArrayList<Double>> getParams(Node node, int iteNum, String tableId, int stale) {
         TTransport transport = null;
-        ArrayList<Double> params = new ArrayList<Double>();
+        ArrayList<ArrayList<Double>> params = new ArrayList<ArrayList<Double>>();
         try {
             transport = new TSocket(node.hostId, node.port, TIMEOUT);
             // TProtocol protocol = new TCompactProtocol(transport);
@@ -59,7 +60,9 @@ public class PSUtils {
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
 
-            params.addAll(client.read(node.hostId, tableId, iteNum, 2).gradients.get(0));
+            for (List<Double> list: client.read(node.hostId, tableId, iteNum, stale).gradients) {
+                params.add((ArrayList<Double>) list);
+            }
 
         } catch (TTransportException e) {
             e.printStackTrace();

@@ -29,7 +29,7 @@ public class WorkerSSPTest {
         workerTest.startWorker("localhost", 8080, 30000);
 
         Node node = new Node("localhost", 8000);
-        System.out.println(PSUtils.getParams(node,20,"lr"));
+        System.out.println(PSUtils.getParams(node,1001,"lr", 3));
     }
 
     public void initParameterServer(String host, int port, int timeout) {
@@ -74,9 +74,9 @@ public class WorkerSSPTest {
             JobConfig jobConfig = new JobConfig();
             jobConfig.jobKey = 1231231L;
             jobConfig.jobType = "LINEAR_REGRESSION";
-            jobConfig.learningRate = 0.02;
+            jobConfig.learningRate = 0.01;
             jobConfig.dataPath = "/home/hadoop/Desktop/train2.txt";
-            jobConfig.iteNum = 20;
+            jobConfig.iteNum = 1000;
             jobConfig.serverId = "localhost";
             jobConfig.serverPort = 8000;
             jobConfig.tableId = "lr";

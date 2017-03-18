@@ -56,7 +56,7 @@ public class MultiWorkerTest {
             e.printStackTrace();
         } finally {
             Node node = new Node("localhost", 8000);
-            System.out.println(PSUtils.getParams(node,1000,"lr"));
+            // System.out.println(PSUtils.getParams(node,1000,"lr"));
         }
 
     }
