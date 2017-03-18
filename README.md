@@ -1,6 +1,13 @@
 # DistributedMLSystem
 this is the ssp lr (pull and push) with sync problems
 
+|side|problem|
+|--|--|
+|server|when two different worker upload the update: a += delta|
+|worker|when update and clock conflicted in the same time|
+
+
+
 MLSystem] 2017-03-18 13:43:12: 6302 [INFO ] [pool-1-thread-2] ( SSPParameterTable.java,96 ) - 297 update is: [0.0046943984477261875, -3.959854325032991E-4, -3.7745479275297535E-4]
 [ INFO] [DistributedMLSystem] 2017-03-18 13:43:12: 6302 [INFO ] [pool-1-thread-2] ( SSPParameterTable.java,173 ) - Start clock: Carrier(iterationNum:297, gradients:[[2.115593419602478, 2.409129379050063, 3.396668177859515]])
 [ INFO] [DistributedMLSystem] 2017-03-18 13:43:12: 6302 [INFO ] [pool-1-thread-2] ( SSPParameterTable.java,96 ) - 298 update is: [0.004689921604570919, -3.9560779510937566E-4, -3.7709483395950645E-4]
