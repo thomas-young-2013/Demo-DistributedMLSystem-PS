@@ -10,6 +10,7 @@ import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.utils.DataInfo;
 import com.thomas.utils.constant.NodeStatus;
 import com.thomas.utils.constant.ParallelType;
+import com.thomas.utils.math.ListUtils;
 import com.thomas.utils.math.MatrixUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -37,7 +38,6 @@ public class LrWorker extends MlAlgoWorker {
     private int iteNum, m, n;
     private Matrix X, A, y;
     private String tableId;
-    private ArrayList<Double> delta;
 
     private Logger logger = Logger.getLogger(this.getClass());
 
@@ -62,7 +62,6 @@ public class LrWorker extends MlAlgoWorker {
             hostId = "worker1";
 
             localStorage = new SSPClientBuffer(properties.rowNum, properties.dimems, properties.stale);
-            delta = new ArrayList<Double>();
 
             /*
             * about Linear Regression Computation
@@ -122,9 +121,24 @@ public class LrWorker extends MlAlgoWorker {
     }
 
     public void read() throws Exception {
+
         // if exceed, wait for the other workers.
         while (localStorage.exceed()) {
-            Thread.sleep(1);
+            // check the consistency of global iteration in local and remote.
+            Carrier carrier = client.check(hostId, tableId, localStorage.globalIter);
+            if (carrier.iterationNum != -1) {
+                // inconsistent case occured.
+                logger.info("inconsistent case: " + localStorage.globalIter + "-->" + carrier.iterationNum);
+                // first we need to clean the out-of-dated parameters: [global: carrier.iteration]
+                for (int i=localStorage.globalIter; i<carrier.iterationNum; i++) {
+                    localStorage.reset(i);
+                }
+                // replace the parameter.
+                localStorage.globalIter = carrier.iterationNum;
+                localStorage.replace(carrier);
+            }
+
+            Thread.sleep(2);
         }
 
         // if local iteration > global iteration, read it from local buffer instead of network.
@@ -140,21 +154,23 @@ public class LrWorker extends MlAlgoWorker {
         if (params.size() == 0) {
             logger.error("parameter size error!");
         }
-        delta = getDeltaPrams(params);
-        localStorage.add(delta);
+
+        // if global iter == local one, remember the update and prepare to update in the future.
+        localStorage.globalDelta = getDeltaPrams(params);
+
+        localStorage.add((ArrayList<Double>) localStorage.globalDelta);
     }
 
     public void update() throws TException {
-        ArrayList<Double> params;
-        if (localStorage.localIter == localStorage.globalIter) {
-            params = delta;
-        } else {
-            params = localStorage.getParamWithLocalUpdate();
-        }
+        // only update the delta.
+        List<Double> params = localStorage.getUpdate();
+
+        // prepare the carrier.
         List<List<Double>> data = new ArrayList<List<Double>>();
         data.add(params);
         Carrier carrier = new Carrier(localStorage.localIter, data);
 
+        logger.info("start update " + localStorage.localIter + "update!");
         // update the parameter at most 3 times.
         int count = 0;
         while (client.update(hostId, tableId, carrier) == false) {
@@ -183,7 +199,12 @@ public class LrWorker extends MlAlgoWorker {
     @Override
     public void clock(Carrier carrier) {
         try {
-            logger.info("finish iter " + carrier.iterationNum + "with param: " + carrier.gradients.get(0));
+            if (carrier.iterationNum < localStorage.globalIter) {
+                logger.info("out-of-dated gradients got: " + localStorage.globalIter + "--> " + carrier.iterationNum);
+                return;
+            }
+
+            logger.info(localStorage.localIter + " finish iter " + carrier.iterationNum + "with param: " + carrier.gradients.get(0));
 
             // reset the parameter list.
             localStorage.reset();
@@ -198,10 +219,8 @@ public class LrWorker extends MlAlgoWorker {
 
     public void lrSSP() throws TException {
         try {
-            for (int i=0; i<iteNum; i++) {
+            while(localStorage.globalIter < iteNum) {
                 read();
-
-                if (i != localStorage.localIter) throw new Exception("Wrong arised!");
 
                 train();
 

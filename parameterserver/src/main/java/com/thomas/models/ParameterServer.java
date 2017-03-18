@@ -58,4 +58,9 @@ public class ParameterServer {
         return tables.get(tableId).update(carrier);
     }
 
+    public Carrier check(String hostId, String tableId, int iter) {
+        SSPParameterTable table = (SSPParameterTable) tables.get(tableId);
+        return table.check(iter);
+    }
+
 }

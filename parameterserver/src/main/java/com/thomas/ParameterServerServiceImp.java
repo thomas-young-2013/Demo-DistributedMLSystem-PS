@@ -30,4 +30,8 @@ public class ParameterServerServiceImp implements ParameterServerService.Iface {
         return parameterServer.createParameterTable(tableType, tableId, machines, params);
     }
 
+    public Carrier check(String hostId, String tableId, int iter) {
+        return parameterServer.check(hostId, tableId, iter);
+    }
+
 }

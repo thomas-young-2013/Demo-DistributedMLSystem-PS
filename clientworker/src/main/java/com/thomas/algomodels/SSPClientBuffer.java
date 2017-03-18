@@ -18,6 +18,8 @@ public class SSPClientBuffer {
 
     public List<List<Double>> buffer;
 
+    public List<Double> globalDelta;
+
     public SSPClientBuffer(int rowNum, int dimems, int stale) {
         this.rowNum = rowNum;
         this.dimems = dimems;
@@ -26,6 +28,8 @@ public class SSPClientBuffer {
         this.localIter = 0;
         this.buffer = new ArrayList<List<Double>>();
         for (int i=0; i<stale+1; i++) this.buffer.add(ListUtils.init(dimems, 0.0));
+
+        this.globalDelta = new ArrayList<Double>();
     }
 
     @Override
@@ -44,11 +48,16 @@ public class SSPClientBuffer {
             return (ArrayList<Double>) buffer.get(localIter%(stale+1));
         }
 
-        ArrayList<Double> result = new ArrayList<Double>();
+        ArrayList<Double> result = ListUtils.init(dimems, 0.0);
         for (int i=globalIter; i<localIter; i++) {
             ListUtils.add(result, buffer.get( i % (stale + 1) ));
         }
         return result;
+    }
+
+    public List<Double> getUpdate() {
+        if (globalIter == localIter) return globalDelta;
+        return buffer.get(localIter%(stale+1));
     }
 
     public boolean exceed() {
@@ -56,11 +65,7 @@ public class SSPClientBuffer {
     }
 
     public void replace(Carrier carrier) {
-        int parameterNum = carrier.gradients.size();
-        int updateIndex = (carrier.iterationNum-localIter)*rowNum;
-        for (int i=0; i<parameterNum; i++) {
-            buffer.set((updateIndex + i) % (stale + 1), carrier.gradients.get(i));
-        }
+        buffer.set(globalIter%(stale+1), carrier.gradients.get(0));
     }
 
     public void set(ArrayList<Double> list) {
@@ -75,8 +80,14 @@ public class SSPClientBuffer {
         ListUtils.add(buffer.get(localIter%(stale+1)), list);
     }
 
+    // reset the global iteration.
     public void reset() {
         buffer.set(globalIter%(stale+1), ListUtils.init(dimems, 0.0));
+    }
+
+    // reset the some fixed iteration.
+    public void reset(int index) {
+        buffer.set(index%(stale+1), ListUtils.init(dimems, 0.0));
     }
 
 }

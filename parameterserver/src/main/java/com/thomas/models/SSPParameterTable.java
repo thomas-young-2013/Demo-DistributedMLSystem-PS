@@ -60,7 +60,6 @@ public class SSPParameterTable extends AbstractPSTable {
         if (stale <= staleValue && t >= curIter && t + stale <= curIter + staleValue) {
             carrier.gradients = new ArrayList<List<Double>>();
             carrier.iterationNum = t;
-            logger.info("start stale reading: <" + t + "> iteration, stale value: " + stale);
 
             int totalRows = (1+staleValue)*rows;
 
@@ -69,9 +68,8 @@ public class SSPParameterTable extends AbstractPSTable {
                 int row = ((t - curIter)*rows + curIndex + i) % totalRows;
                 for (int j=0; j<dimems; j++) list.add(parameters[row][j]);
                 carrier.gradients.add(list);
-                logger.info(i + " read: " + list);
+                logger.info(t + " iteration read: " + list);
             }
-            logger.info("end stale reading: <" + t + "> iteration, stale value: " + stale);
         } else {
             carrier.iterationNum = -1;
         }
@@ -89,16 +87,14 @@ public class SSPParameterTable extends AbstractPSTable {
                 return false;
             }
             int updateRowNums = gradients.size();
-            logger.info("start update: <" + iterationId + "> stale value: " + (updateRowNums - 1));
             int totalRows = (1 + staleValue)*rows;
             for (int i = 0; i < updateRowNums; i++) {
                 for (int j = 0; j < dimems; j++) {
                     this.parameters[((iterationId - curIter)*rows + curIndex + i) % totalRows][j]
                             += gradients.get(i).get(j);
                 }
-                logger.info("update is: " + gradients.get(i));
+                logger.info(iterationId + " update is: " + gradients.get(i));
             }
-            logger.info("end update: <" + iterationId + "> stale value: " + (updateRowNums - 1));
 
             // increase the count and decide whether the end.
             updateRecorder.incrementAndGet(iterationId%(1+staleValue));
@@ -113,7 +109,7 @@ public class SSPParameterTable extends AbstractPSTable {
                 carrier2.gradients = new ArrayList<List<Double>>();
                 for (int i=0; i<rows; i++) {
                     List<Double> list = new ArrayList<Double>();
-                    for (int j=0; j<dimems; j++) list.add(parameters[(curIndex + i)][j]);
+                    for (int j=0; j<dimems; j++) list.add(parameters[(curIndex + i) % totalRows][j]);
                     carrier2.gradients.add(list);
                 }
 
@@ -141,7 +137,7 @@ public class SSPParameterTable extends AbstractPSTable {
                     }
                 }
 
-                curIndex += rows;
+                curIndex = (curIndex + rows) % totalRows;
 
                 // push the newest parameter to all workers.
                 clock(nodes, carrier2);
@@ -155,10 +151,26 @@ public class SSPParameterTable extends AbstractPSTable {
         return result;
     }
 
+    public Carrier check(int iter) {
+        Carrier carrier = new Carrier(-1, null);
+        // if it is consistent.
+        if (iter == curIteration.get()) return carrier;
+
+        // otherwise push the global parameter to the worker.
+        carrier.iterationNum = curIteration.get();
+        carrier.gradients = new ArrayList<List<Double>>();
+        for (int i=0; i<rows; i++) {
+            List<Double> list = new ArrayList<Double>();
+            for (int j=0; j<dimems; j++) list.add(parameters[curIndex + i][j]);
+            carrier.gradients.add(list);
+        }
+        return carrier;
+    }
+
     private void clock(ArrayList<Node> nodes, Carrier carrier) {
         try {
             for (Node node: nodes) {
-                logger.info("Start clock: " + node);
+                logger.info("Start clock: " + carrier);
                 TTransport transport = new TSocket(node.hostId, node.port);
                 transport.open();
                 TProtocol protocol = new TBinaryProtocol(transport);
@@ -169,4 +181,5 @@ public class SSPParameterTable extends AbstractPSTable {
             e.printStackTrace();
         }
     }
+
 }
