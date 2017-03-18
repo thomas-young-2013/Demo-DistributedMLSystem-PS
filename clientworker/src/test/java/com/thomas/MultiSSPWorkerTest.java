@@ -8,7 +8,6 @@ import com.thomas.thrift.worker.PSWorkerService;
 import com.thomas.utils.thrift.PSUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
@@ -18,12 +17,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by hadoop on 3/11/17.
+ * Created by hadoop on 3/18/17.
  */
-public class MultiWorkerTest {
+public class MultiSSPWorkerTest {
     public static void main(String []args) {
-        // create parameter table and init it. localhost 8000
-        final MultiWorkerTest workerTest = new MultiWorkerTest();
+        // create parameter table and init it. localhost 9000
+        final MultiSSPWorkerTest workerTest = new MultiSSPWorkerTest();
         workerTest.initParameterServer("localhost", 8000, 30000);
 
         // start a worker and run a job.
@@ -42,23 +41,14 @@ public class MultiWorkerTest {
                 workerTest.startWorker("localhost", 8082, 30000, "/home/hadoop/Desktop/train3.txt");
             }
         };
+
         Thread t1 = new Thread(s1);
         Thread t2 = new Thread(s2);
         Thread t3 = new Thread(s3);
+
         t1.start();
         t2.start();
         t3.start();
-        /*try {
-            t1.join();
-            t2.join();
-            t3.join();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            Node node = new Node("localhost", 8000);
-            System.out.println(PSUtils.getParams(node,1000,"lr"));
-        }*/
-
     }
 
     public void initParameterServer(String host, int port, int timeout) {
@@ -67,9 +57,9 @@ public class MultiWorkerTest {
         list.add(0.0);
         list.add(0.0);
         List<String> machines = new ArrayList<String>();
-        machines.add("worker1");
-        machines.add("worker2");
-        machines.add("worker3");
+        machines.add("localhost:8080");
+        machines.add("localhost:8081");
+        machines.add("localhost:8082");
         List<List<Double>> list1 = new ArrayList<List<Double>>();
         list1.add(list);
         Carrier carrier = new Carrier(0, list1);
@@ -81,7 +71,7 @@ public class MultiWorkerTest {
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
 
-            client.create("BSP", "lr", machines, carrier);
+            client.create("SSP:3", "lr", machines, carrier);
 
         } catch (TTransportException e) {
             e.printStackTrace();
@@ -112,13 +102,12 @@ public class MultiWorkerTest {
             jobConfig.serverPort = 8000;
             jobConfig.tableId = "lr";
             jobConfig.stale = 3;
-            jobConfig.parallelType="BSP";
+            jobConfig.parallelType="SSP";
             jobConfig.rowNum=1;
             jobConfig.dimems=3;
 
             client.runJob(jobConfig);
 
-            System.out.println(client.isAlive());
         } catch (TTransportException e) {
             e.printStackTrace();
         } catch (TException e) {

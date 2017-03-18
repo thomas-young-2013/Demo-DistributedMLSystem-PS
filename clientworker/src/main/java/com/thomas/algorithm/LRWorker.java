@@ -10,7 +10,6 @@ import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.utils.DataInfo;
 import com.thomas.utils.constant.NodeStatus;
 import com.thomas.utils.constant.ParallelType;
-import com.thomas.utils.math.ListUtils;
 import com.thomas.utils.math.MatrixUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -27,10 +26,9 @@ import static com.thomas.utils.DataReader.getDataInfo;
 import static com.thomas.utils.DataReader.getTrainData;
 
 /**
- * Created by hadoop on 3/11/17.
+ * Created by hadoop on 3/18/17.
  */
-public class LrWorker extends MlAlgoWorker {
-
+public class LRWorker extends MlAlgoWorker {
     private ParameterServerService.Client client;
     private SSPClientBuffer localStorage;
 
@@ -41,11 +39,11 @@ public class LrWorker extends MlAlgoWorker {
 
     private Logger logger = Logger.getLogger(this.getClass());
 
-    public LrWorker() {
+    public LRWorker() {
         super();
     }
 
-    public LrWorker(MlAlgoType mlAlgoType, Properties properties) {
+    public LRWorker(MlAlgoType mlAlgoType, Properties properties) {
         super(mlAlgoType, properties);
 
         // init the worker props.
@@ -120,7 +118,7 @@ public class LrWorker extends MlAlgoWorker {
         }
     }
 
-    public void read() throws Exception {
+    public synchronized void read() throws Exception {
 
         // if exceed, wait for the other workers.
         while (localStorage.exceed()) {
@@ -138,7 +136,7 @@ public class LrWorker extends MlAlgoWorker {
                 localStorage.replace(carrier);
             }
 
-            Thread.sleep(2);
+            Thread.sleep(1);
         }
 
         // if local iteration > global iteration, read it from local buffer instead of network.
@@ -161,7 +159,7 @@ public class LrWorker extends MlAlgoWorker {
         localStorage.add((ArrayList<Double>) localStorage.globalDelta);
     }
 
-    public void update() throws TException {
+    public synchronized void update() throws TException {
         // only update the delta.
         List<Double> params = localStorage.getUpdate();
 
@@ -197,7 +195,7 @@ public class LrWorker extends MlAlgoWorker {
     }
 
     @Override
-    public void clock(Carrier carrier) {
+    public synchronized void clock(Carrier carrier) {
         try {
             if (carrier.iterationNum < localStorage.globalIter) {
                 logger.info("out-of-dated gradients got: " + localStorage.globalIter + "--> " + carrier.iterationNum);
@@ -260,10 +258,14 @@ public class LrWorker extends MlAlgoWorker {
         Matrix theta = new Matrix(thetaArray);
 
         Matrix tmp = X.times(theta).minus(y);
+        int rowDim = tmp.getRowDimension();
+
+        double cost = tmp.transpose().times(tmp).get(0, 0)/(2.0*rowDim);
+        System.out.println("Iter " + localStorage.localIter + " the cost is: <" + cost + ">");
+
         double deltaArray[][] = X.transpose().times(tmp).times(lr/m*(-1.0)).getArray();
         ArrayList<Double> deltaList = new ArrayList<Double>(n);
         for (int i=0; i<n; i++) deltaList.add(deltaArray[i][0]);
         return deltaList;
     }
-
 }

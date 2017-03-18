@@ -59,7 +59,7 @@ public class PSUtils {
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
 
-            params.addAll(client.read(node.hostId, tableId, iteNum, 2).gradients.get(0));
+            params.addAll(client.read(node.hostId, tableId, iteNum, 0).gradients.get(0));
 
         } catch (TTransportException e) {
             e.printStackTrace();
