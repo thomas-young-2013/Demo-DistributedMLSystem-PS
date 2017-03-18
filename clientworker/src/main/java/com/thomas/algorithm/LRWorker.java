@@ -133,10 +133,10 @@ public class LRWorker extends MlAlgoWorker {
                 }
                 // replace the parameter.
                 localStorage.globalIter = carrier.iterationNum;
+                localStorage.localIter = localStorage.globalIter;
                 localStorage.replace(carrier);
+                return;
             }
-
-            Thread.sleep(1);
         }
 
         // if local iteration > global iteration, read it from local buffer instead of network.
