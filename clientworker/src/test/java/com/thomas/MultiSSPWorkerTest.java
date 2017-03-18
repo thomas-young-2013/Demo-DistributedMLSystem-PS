@@ -1,11 +1,9 @@
 package com.thomas;
 
-import com.thomas.models.Node;
 import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.thrift.worker.PSWorkerService;
-import com.thomas.utils.thrift.PSUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -20,6 +18,7 @@ import java.util.List;
  * Created by hadoop on 3/18/17.
  */
 public class MultiSSPWorkerTest {
+    private int stale = 3;
     public static void main(String []args) {
         // create parameter table and init it. localhost 9000
         final MultiSSPWorkerTest workerTest = new MultiSSPWorkerTest();
@@ -44,11 +43,11 @@ public class MultiSSPWorkerTest {
 
         Thread t1 = new Thread(s1);
         Thread t2 = new Thread(s2);
-        Thread t3 = new Thread(s3);
+        // Thread t3 = new Thread(s3);
 
         t1.start();
         t2.start();
-        t3.start();
+        // t3.start();
     }
 
     public void initParameterServer(String host, int port, int timeout) {
@@ -59,7 +58,7 @@ public class MultiSSPWorkerTest {
         List<String> machines = new ArrayList<String>();
         machines.add("localhost:8080");
         machines.add("localhost:8081");
-        machines.add("localhost:8082");
+        // machines.add("localhost:8082");
         List<List<Double>> list1 = new ArrayList<List<Double>>();
         list1.add(list);
         Carrier carrier = new Carrier(0, list1);
@@ -71,7 +70,7 @@ public class MultiSSPWorkerTest {
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
 
-            client.create("SSP:3", "lr", machines, carrier);
+            client.create("SSP:"+stale, "lr", machines, carrier);
 
         } catch (TTransportException e) {
             e.printStackTrace();
@@ -95,13 +94,13 @@ public class MultiSSPWorkerTest {
             JobConfig jobConfig = new JobConfig();
             jobConfig.jobKey = 1231231L;
             jobConfig.jobType = "LINEAR_REGRESSION";
-            jobConfig.learningRate = 0.005;
+            jobConfig.learningRate = 0.007;
             jobConfig.dataPath = dataPath;
             jobConfig.iteNum = 1000;
             jobConfig.serverId = "localhost";
             jobConfig.serverPort = 8000;
             jobConfig.tableId = "lr";
-            jobConfig.stale = 3;
+            jobConfig.stale = stale;
             jobConfig.parallelType="SSP";
             jobConfig.rowNum=1;
             jobConfig.dimems=3;

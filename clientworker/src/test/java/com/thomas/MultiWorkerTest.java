@@ -44,10 +44,10 @@ public class MultiWorkerTest {
         };
         Thread t1 = new Thread(s1);
         Thread t2 = new Thread(s2);
-        Thread t3 = new Thread(s3);
+        // Thread t3 = new Thread(s3);
         t1.start();
         t2.start();
-        t3.start();
+        // t3.start();
         /*try {
             t1.join();
             t2.join();
@@ -69,7 +69,7 @@ public class MultiWorkerTest {
         List<String> machines = new ArrayList<String>();
         machines.add("worker1");
         machines.add("worker2");
-        machines.add("worker3");
+        // machines.add("worker3");
         List<List<Double>> list1 = new ArrayList<List<Double>>();
         list1.add(list);
         Carrier carrier = new Carrier(0, list1);
@@ -105,7 +105,7 @@ public class MultiWorkerTest {
             JobConfig jobConfig = new JobConfig();
             jobConfig.jobKey = 1231231L;
             jobConfig.jobType = "LINEAR_REGRESSION";
-            jobConfig.learningRate = 0.005;
+            jobConfig.learningRate = 0.007;
             jobConfig.dataPath = dataPath;
             jobConfig.iteNum = 1000;
             jobConfig.serverId = "localhost";
