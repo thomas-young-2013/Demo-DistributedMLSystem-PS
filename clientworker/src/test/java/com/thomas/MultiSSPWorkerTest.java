@@ -1,9 +1,11 @@
 package com.thomas;
 
+import com.thomas.models.Node;
 import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.thrift.worker.PSWorkerService;
+import com.thomas.utils.thrift.PSUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -18,7 +20,7 @@ import java.util.List;
  * Created by hadoop on 3/18/17.
  */
 public class MultiSSPWorkerTest {
-    private int stale = 20;
+    private int stale = 3;
     public static void main(String []args) {
         // create parameter table and init it. localhost 9000
         final MultiSSPWorkerTest workerTest = new MultiSSPWorkerTest();
@@ -40,14 +42,33 @@ public class MultiSSPWorkerTest {
                 workerTest.startWorker("localhost", 8082, 30000, "/home/hadoop/Desktop/train3.txt");
             }
         };
+        Runnable s4 = new Runnable() {
+            public void run() {
+                workerTest.startWorker("localhost", 8083, 30000, "/home/hadoop/Desktop/train3.txt");
+            }
+        };
 
         Thread t1 = new Thread(s1);
         Thread t2 = new Thread(s2);
-        // Thread t3 = new Thread(s3);
+        Thread t3 = new Thread(s3);
+        Thread t4 = new Thread(s4);
 
         t1.start();
         t2.start();
-        // t3.start();
+        t3.start();
+        t4.start();
+        try {
+            t1.join();
+            t2.join();
+            t3.join();
+            t4.join();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Node node = new Node("localhost", 8000);
+        System.out.println(PSUtils.getParams(node,1000,"lr"));
+
     }
 
     public void initParameterServer(String host, int port, int timeout) {
@@ -58,6 +79,8 @@ public class MultiSSPWorkerTest {
         List<String> machines = new ArrayList<String>();
         machines.add("localhost:8080");
         machines.add("localhost:8081");
+        machines.add("localhost:8082");
+        machines.add("localhost:8083");
         // machines.add("localhost:8082");
         List<List<Double>> list1 = new ArrayList<List<Double>>();
         list1.add(list);
@@ -94,7 +117,7 @@ public class MultiSSPWorkerTest {
             JobConfig jobConfig = new JobConfig();
             jobConfig.jobKey = 1231231L;
             jobConfig.jobType = "LINEAR_REGRESSION";
-            jobConfig.learningRate = 0.007;
+            jobConfig.learningRate = 0.005;
             jobConfig.dataPath = dataPath;
             jobConfig.iteNum = 1000;
             jobConfig.serverId = "localhost";

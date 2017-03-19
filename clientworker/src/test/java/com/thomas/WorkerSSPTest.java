@@ -29,7 +29,7 @@ public class WorkerSSPTest {
         workerTest.startWorker("localhost", 8080, 30000);
 
         Node node = new Node("localhost", 8000);
-        System.out.println(PSUtils.getParams(node,1001,"lr"));
+        System.out.println(PSUtils.getParams(node,1000,"lr"));
     }
 
     public void initParameterServer(String host, int port, int timeout) {

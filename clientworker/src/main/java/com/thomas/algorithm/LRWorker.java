@@ -118,7 +118,7 @@ public class LRWorker extends MlAlgoWorker {
         }
     }
 
-    public synchronized void read() throws Exception {
+    public void read() throws Exception {
 
         // if exceed, wait for the other workers.
         while (localStorage.exceed()) {
@@ -126,23 +126,17 @@ public class LRWorker extends MlAlgoWorker {
             Carrier carrier = client.check(hostId, tableId, localStorage.globalIter);
             if (carrier.iterationNum != -1) {
                 // inconsistent case occured.
-                logger.info("inconsistent case: " + localStorage.globalIter + "-->" + carrier.iterationNum);
+                logger.info("inconsistent case --> local: " + localStorage.globalIter + " remote: " + carrier);
+
                 // first we need to clean the out-of-dated parameters: [global: carrier.iteration]
                 for (int i=localStorage.globalIter; i<carrier.iterationNum; i++) {
                     localStorage.reset(i);
                 }
                 // replace the parameter.
                 localStorage.globalIter = carrier.iterationNum;
-                localStorage.localIter = localStorage.globalIter;
                 localStorage.replace(carrier);
-                return;
             }
-        }
-
-        // if local iteration > global iteration, read it from local buffer instead of network.
-        if (localStorage.localIter == localStorage.globalIter) {
-            Carrier carrier = client.read(hostId, tableId, localStorage.localIter, 0);
-            localStorage.set((ArrayList<Double>) carrier.gradients.get(0));
+            Thread.sleep(1);
         }
     }
 
@@ -159,7 +153,7 @@ public class LRWorker extends MlAlgoWorker {
         localStorage.add((ArrayList<Double>) localStorage.globalDelta);
     }
 
-    public synchronized void update() throws TException {
+    public void update() throws TException {
         // only update the delta.
         List<Double> params = localStorage.getUpdate();
 
@@ -168,7 +162,7 @@ public class LRWorker extends MlAlgoWorker {
         data.add(params);
         Carrier carrier = new Carrier(localStorage.localIter, data);
 
-        logger.info("start update " + localStorage.localIter + "update!");
+        logger.info("start update " + localStorage.localIter + " update: " + carrier);
         // update the parameter at most 3 times.
         int count = 0;
         while (client.update(hostId, tableId, carrier) == false) {
@@ -195,33 +189,16 @@ public class LRWorker extends MlAlgoWorker {
     }
 
     @Override
-    public synchronized void clock(Carrier carrier) {
-        try {
-            if (carrier.iterationNum < localStorage.globalIter) {
-                logger.info("out-of-dated gradients got: " + localStorage.globalIter + "--> " + carrier.iterationNum);
-                return;
-            }
-
-            logger.info(localStorage.localIter + " finish iter " + carrier.iterationNum + "with param: " + carrier.gradients.get(0));
-
-            // reset the parameter list.
-            localStorage.reset();
-
-            // update the global iteration number.
-            localStorage.globalIter = carrier.iterationNum + 1;
-            localStorage.add(carrier);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    public void clock(Carrier carrier) {}
 
     public void lrSSP() throws TException {
         try {
-            while(localStorage.globalIter < iteNum) {
+            for(int i=0; i<iteNum; i++) {
                 read();
 
-                train();
+                assert i==localStorage.globalIter : "Errors Here!";
 
+                train();
                 update();
             }
         } catch (Exception e) {
@@ -261,7 +238,7 @@ public class LRWorker extends MlAlgoWorker {
         int rowDim = tmp.getRowDimension();
 
         double cost = tmp.transpose().times(tmp).get(0, 0)/(2.0*rowDim);
-        System.out.println("Iter " + localStorage.localIter + " the cost is: <" + cost + ">");
+        logger.info("Iter " + localStorage.localIter + " the cost is: <" + cost + ">");
 
         double deltaArray[][] = X.transpose().times(tmp).times(lr/m*(-1.0)).getArray();
         ArrayList<Double> deltaList = new ArrayList<Double>(n);

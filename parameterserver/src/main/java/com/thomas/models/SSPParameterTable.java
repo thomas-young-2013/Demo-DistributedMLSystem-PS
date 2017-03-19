@@ -18,10 +18,12 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 public class SSPParameterTable extends AbstractPSTable {
     public int staleValue;
 
-    // the start of current parameter index
+    // the start of current parameter index with no sync problem
     public int curIndex;
 
     public AtomicIntegerArray updateRecorder;
+
+    public Carrier clockCarrier;
 
     private Logger logger = Logger.getLogger(this.getClass());
 
@@ -34,7 +36,7 @@ public class SSPParameterTable extends AbstractPSTable {
         super(tableId, workerNum, dimems, rows, workers);
         this.staleValue = staleValue;
         this.curIndex = 0;
-
+        this.clockCarrier = new Carrier();
         // we init the parameters in the create table phase.
         parameters = new double[rows + staleValue*rows][dimems];
         for (int i = 0; i < rows; i++) {
@@ -55,6 +57,9 @@ public class SSPParameterTable extends AbstractPSTable {
 
     @Override
     public Carrier read(int t, int stale) {
+        // read from server clock buffer.
+        if (clockCarrier != null && clockCarrier.iterationNum == t && stale == 0) return clockCarrier;
+
         Carrier carrier = new Carrier();
         int curIter = curIteration.get();
         if (stale <= staleValue && t >= curIter && t + stale <= curIter + staleValue) {
@@ -68,11 +73,11 @@ public class SSPParameterTable extends AbstractPSTable {
                 int row = ((t - curIter)*rows + curIndex + i) % totalRows;
                 for (int j=0; j<dimems; j++) list.add(parameters[row][j]);
                 carrier.gradients.add(list);
-                logger.info(t + " iteration read: " + list);
             }
         } else {
             carrier.iterationNum = -1;
         }
+        logger.info("read: " + carrier);
         return carrier;
     }
 
@@ -86,14 +91,17 @@ public class SSPParameterTable extends AbstractPSTable {
             if (iterationId < curIteration.get() || iterationId > staleValue+curIter || gradients== null) {
                 return false;
             }
+
             int updateRowNums = gradients.size();
             int totalRows = (1 + staleValue)*rows;
-            for (int i = 0; i < updateRowNums; i++) {
-                for (int j = 0; j < dimems; j++) {
-                    this.parameters[((iterationId - curIter)*rows + curIndex + i) % totalRows][j]
-                            += gradients.get(i).get(j);
+            synchronized (parameters) {
+                for (int i = 0; i < updateRowNums; i++) {
+                    for (int j = 0; j < dimems; j++) {
+                        this.parameters[((iterationId - curIter) * rows + curIndex + i) % totalRows][j]
+                                += gradients.get(i).get(j);
+                    }
+                    logger.info(iterationId + " update is: " + gradients.get(i));
                 }
-                logger.info(iterationId + " update is: " + gradients.get(i));
             }
 
             // increase the count and decide whether the end.
@@ -103,31 +111,25 @@ public class SSPParameterTable extends AbstractPSTable {
 
                 updateRecorder.set(curIter%(1+staleValue), 0);
 
-                // keep the parameter
-                Carrier carrier2 = new Carrier();
-                carrier2.iterationNum = curIter;
-                carrier2.gradients = new ArrayList<List<Double>>();
+                clockCarrier.iterationNum = curIteration.incrementAndGet();
+
+                if (clockCarrier.gradients == null) clockCarrier.gradients= new ArrayList<List<Double>>();
+                else clockCarrier.gradients.clear();
                 for (int i=0; i<rows; i++) {
                     List<Double> list = new ArrayList<Double>();
                     for (int j=0; j<dimems; j++) list.add(parameters[(curIndex + i) % totalRows][j]);
-                    carrier2.gradients.add(list);
+                    clockCarrier.gradients.add(list);
                 }
 
-                // push the parameter to the next iteration.
-                Carrier carrier1 = new Carrier();
-                carrier1.iterationNum = curIteration.incrementAndGet();
-                carrier1.gradients = new ArrayList<List<Double>>();
-
                 // update the gradients and prepare the carrier to be sent to all workers.
-                for (int i=0; i<rows; i++ ) {
-                    List<Double> list = new ArrayList<Double>();
-                    for (int j=0; j<dimems; j++) {
-                        double tmp = parameters[(i+curIndex + rows) % totalRows][j];
-                        tmp += parameters[i+curIndex][j];
-                        parameters[(i+curIndex + rows) % totalRows][j] = tmp;
-                        list.add(tmp);
+                synchronized (parameters) {
+                    for (int i = 0; i < rows; i++) {
+                        for (int j = 0; j < dimems; j++) {
+                            double tmp = parameters[(i + curIndex + rows) % totalRows][j];
+                            tmp += parameters[i + curIndex][j];
+                            parameters[(i + curIndex + rows) % totalRows][j] = tmp;
+                        }
                     }
-                    carrier1.gradients.add(list);
                 }
 
                 // reset to 0
@@ -136,12 +138,7 @@ public class SSPParameterTable extends AbstractPSTable {
                         parameters[i+curIndex][j] = 0.0;
                     }
                 }
-
                 curIndex = (curIndex + rows) % totalRows;
-
-                // push the newest parameter to all workers.
-                clock(nodes, carrier2);
-
             }
 
         } catch (Exception e) {
@@ -151,8 +148,9 @@ public class SSPParameterTable extends AbstractPSTable {
         return result;
     }
 
-    public Carrier check(int iter) {
+    public Carrier check(String hostId, int iter) {
         Carrier carrier = new Carrier(-1, null);
+        logger.info(hostId + " check local: " + iter + "remote: " + curIteration.get());
         // if it is consistent.
         if (iter == curIteration.get()) return carrier;
 
@@ -164,22 +162,8 @@ public class SSPParameterTable extends AbstractPSTable {
             for (int j=0; j<dimems; j++) list.add(parameters[curIndex + i][j]);
             carrier.gradients.add(list);
         }
+        logger.info("The carrier is: " + carrier);
         return carrier;
-    }
-
-    private void clock(ArrayList<Node> nodes, Carrier carrier) {
-        try {
-            for (Node node: nodes) {
-                logger.info("Start clock: " + carrier);
-                TTransport transport = new TSocket(node.hostId, node.port);
-                transport.open();
-                TProtocol protocol = new TBinaryProtocol(transport);
-                PSWorkerService.Client client = new PSWorkerService.Client(protocol);
-                client.clock(tableId, carrier);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
 }

@@ -60,7 +60,7 @@ public class ParameterServer {
 
     public Carrier check(String hostId, String tableId, int iter) {
         SSPParameterTable table = (SSPParameterTable) tables.get(tableId);
-        return table.check(iter);
+        return table.check(hostId, iter);
     }
 
 }
