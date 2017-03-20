@@ -134,7 +134,7 @@ public class LRWorker extends MlAlgoWorker {
                 }
                 // replace the parameter.
                 localStorage.globalIter = carrier.iterationNum;
-                localStorage.replace(carrier);
+                localStorage.add(carrier);
             }
             Thread.sleep(1);
         }

@@ -108,13 +108,14 @@ public class SSPParameterTable extends AbstractPSTable {
             updateRecorder.incrementAndGet(iterationId%(1+staleValue));
 
             if (updateRecorder.get(curIter%(1+staleValue)) == workerNum) {
-
+                print();
                 updateRecorder.set(curIter%(1+staleValue), 0);
 
                 clockCarrier.iterationNum = curIteration.incrementAndGet();
 
                 if (clockCarrier.gradients == null) clockCarrier.gradients= new ArrayList<List<Double>>();
                 else clockCarrier.gradients.clear();
+
                 for (int i=0; i<rows; i++) {
                     List<Double> list = new ArrayList<Double>();
                     for (int j=0; j<dimems; j++) list.add(parameters[(curIndex + i) % totalRows][j]);
@@ -139,6 +140,7 @@ public class SSPParameterTable extends AbstractPSTable {
                     }
                 }
                 curIndex = (curIndex + rows) % totalRows;
+                print();
             }
 
         } catch (Exception e) {
@@ -150,9 +152,9 @@ public class SSPParameterTable extends AbstractPSTable {
 
     public Carrier check(String hostId, int iter) {
         Carrier carrier = new Carrier(-1, null);
-        logger.info(hostId + " check local: " + iter + "remote: " + curIteration.get());
         // if it is consistent.
         if (iter == curIteration.get()) return carrier;
+        logger.info(hostId + " check local: " + iter + "remote: " + curIteration.get());
 
         // otherwise push the global parameter to the worker.
         carrier.iterationNum = curIteration.get();
@@ -166,4 +168,14 @@ public class SSPParameterTable extends AbstractPSTable {
         return carrier;
     }
 
+    public void print() {
+        System.out.println("current iteration is: " + curIteration.get());
+        System.out.println("current index is: " + curIndex);
+        for (int i=0; i<staleValue+1; i++) {
+            for (int j=0; j<dimems; j++) {
+                System.out.print(" " + parameters[i][j]);
+            }
+            System.out.println("");
+        }
+    }
 }

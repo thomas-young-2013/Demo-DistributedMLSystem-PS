@@ -20,7 +20,7 @@ import java.util.List;
  * Created by hadoop on 3/18/17.
  */
 public class MultiSSPWorkerTest {
-    private int stale = 3;
+    private int stale = 5;
     public static void main(String []args) {
         // create parameter table and init it. localhost 9000
         final MultiSSPWorkerTest workerTest = new MultiSSPWorkerTest();
@@ -117,7 +117,7 @@ public class MultiSSPWorkerTest {
             JobConfig jobConfig = new JobConfig();
             jobConfig.jobKey = 1231231L;
             jobConfig.jobType = "LINEAR_REGRESSION";
-            jobConfig.learningRate = 0.005;
+            jobConfig.learningRate = 0.006;
             jobConfig.dataPath = dataPath;
             jobConfig.iteNum = 1000;
             jobConfig.serverId = "localhost";
