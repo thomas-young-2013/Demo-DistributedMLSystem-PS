@@ -157,15 +157,15 @@ public class SSPParameterTable extends AbstractPSTable {
         logger.info(hostId + " check local: " + iter + "remote: " + curIteration.get());
 
         // otherwise push the global parameter to the worker.
-        carrier.iterationNum = curIteration.get();
+        /*carrier.iterationNum = curIteration.get();
         carrier.gradients = new ArrayList<List<Double>>();
         for (int i=0; i<rows; i++) {
             List<Double> list = new ArrayList<Double>();
             for (int j=0; j<dimems; j++) list.add(parameters[curIndex + i][j]);
             carrier.gradients.add(list);
         }
-        logger.info("The carrier is: " + carrier);
-        return carrier;
+        logger.info("The carrier is: " + carrier);*/
+        return clockCarrier;
     }
 
     public void print() {

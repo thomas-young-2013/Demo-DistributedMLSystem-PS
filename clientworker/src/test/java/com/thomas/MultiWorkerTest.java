@@ -42,26 +42,26 @@ public class MultiWorkerTest {
                 workerTest.startWorker("localhost", 8082, 30000, "/home/hadoop/Desktop/train3.txt");
             }
         };
-        Runnable s4 = new Runnable() {
+        /*Runnable s4 = new Runnable() {
             public void run() {
                 workerTest.startWorker("localhost", 8083, 30000, "/home/hadoop/Desktop/train3.txt");
             }
-        };
+        };*/
 
         Thread t1 = new Thread(s1);
         Thread t2 = new Thread(s2);
         Thread t3 = new Thread(s3);
-        Thread t4 = new Thread(s4);
+        // Thread t4 = new Thread(s4);
 
         t1.start();
         t2.start();
         t3.start();
-        t4.start();
+        // t4.start();
         try {
             t1.join();
             t2.join();
             t3.join();
-            t4.join();
+            // t4.join();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -79,7 +79,7 @@ public class MultiWorkerTest {
         machines.add("worker1");
         machines.add("worker2");
         machines.add("worker3");
-        machines.add("worker4");
+        // machines.add("worker4");
         // machines.add("worker3");
         List<List<Double>> list1 = new ArrayList<List<Double>>();
         list1.add(list);

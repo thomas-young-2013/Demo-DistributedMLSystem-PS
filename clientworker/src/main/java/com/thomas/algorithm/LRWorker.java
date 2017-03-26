@@ -119,25 +119,45 @@ public class LRWorker extends MlAlgoWorker {
     }
 
     public void read() throws Exception {
-
-        // if exceed, wait for the other workers.
+        Carrier carrier = null;
         while (localStorage.exceed()) {
             // check the consistency of global iteration in local and remote.
-            Carrier carrier = client.check(hostId, tableId, localStorage.globalIter);
-            if (carrier.iterationNum != -1) {
-                // inconsistent case occured.
-                logger.info("inconsistent case --> local: " + localStorage.globalIter + " remote: " + carrier);
+            carrier = client.check(hostId, tableId, localStorage.globalIter);
+            if (carrier.iterationNum != -1) break;
+            Thread.sleep(1);
+        }
 
-                // first we need to clean the out-of-dated parameters: [global: carrier.iteration]
-                for (int i=localStorage.globalIter; i<carrier.iterationNum; i++) {
+        if (carrier == null) carrier = client.check(hostId, tableId, localStorage.globalIter);
+        if (carrier.iterationNum != -1) {
+            // inconsistent case occured.
+            logger.info("INCON-->local: " + localStorage.globalIter + " remote: " + carrier);
+            // first we need to clean the out-of-dated parameters: [global: carrier.iteration]
+            for (int i=localStorage.globalIter; i<carrier.iterationNum; i++) {
+                localStorage.reset(i);
+            }
+            // replace the parameter.
+            localStorage.globalIter = carrier.iterationNum;
+            localStorage.replace(carrier);
+        }
+
+        /*// if exceed, wait for the other workers.
+        while (localStorage.exceed()) {
+            // check the consistency of global iteration in local and remote.
+            Carrier carrier1 = client.check(hostId, tableId, localStorage.globalIter);
+            if (carrier1.iterationNum != -1) {
+                // inconsistent case occured.
+                logger.info("inconsistent case --> local: " + localStorage.globalIter + " remote: " + carrier1);
+
+                // first we need to clean the out-of-dated parameters: [global: carrier1.iteration]
+                for (int i=localStorage.globalIter; i<carrier1.iterationNum; i++) {
                     localStorage.reset(i);
                 }
                 // replace the parameter.
-                localStorage.globalIter = carrier.iterationNum;
-                localStorage.add(carrier);
+                localStorage.globalIter = carrier1.iterationNum;
+                localStorage.add(carrier1);
             }
             Thread.sleep(1);
-        }
+        }*/
     }
 
     public void train() {
