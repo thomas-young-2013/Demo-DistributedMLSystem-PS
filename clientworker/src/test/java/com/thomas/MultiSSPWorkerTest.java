@@ -67,7 +67,7 @@ public class MultiSSPWorkerTest {
         }
 
         Node node = new Node("localhost", 8000);
-        System.out.println(PSUtils.getParams(node,100,"lr"));
+        System.out.println(PSUtils.getParams(node,1000,"lr"));
 
     }
 

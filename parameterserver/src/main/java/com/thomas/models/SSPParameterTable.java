@@ -36,7 +36,7 @@ public class SSPParameterTable extends AbstractPSTable {
         super(tableId, workerNum, dimems, rows, workers);
         this.staleValue = staleValue;
         this.curIndex = 0;
-        this.clockCarrier = new Carrier();
+        this.clockCarrier = new Carrier(-1, null);
         // we init the parameters in the create table phase.
         parameters = new double[rows + staleValue*rows][dimems];
         for (int i = 0; i < rows; i++) {
@@ -58,7 +58,8 @@ public class SSPParameterTable extends AbstractPSTable {
     @Override
     public Carrier read(int t, int stale) {
         // read from server clock buffer.
-        if (clockCarrier != null && clockCarrier.iterationNum == t && stale == 0) return clockCarrier;
+        if (clockCarrier != null && clockCarrier.iterationNum == t && stale == 0 && clockCarrier.gradients.size() > 0)
+            return clockCarrier;
 
         Carrier carrier = new Carrier();
         int curIter = curIteration.get();
@@ -108,7 +109,7 @@ public class SSPParameterTable extends AbstractPSTable {
             updateRecorder.incrementAndGet(iterationId%(1+staleValue));
 
             if (updateRecorder.get(curIter%(1+staleValue)) == workerNum) {
-                print();
+                // print();
                 updateRecorder.set(curIter%(1+staleValue), 0);
 
                 clockCarrier.iterationNum = curIteration.incrementAndGet();
@@ -116,20 +117,23 @@ public class SSPParameterTable extends AbstractPSTable {
                 if (clockCarrier.gradients == null) clockCarrier.gradients= new ArrayList<List<Double>>();
                 else clockCarrier.gradients.clear();
 
-                for (int i=0; i<rows; i++) {
+                /*for (int i=0; i<rows; i++) {
                     List<Double> list = new ArrayList<Double>();
                     for (int j=0; j<dimems; j++) list.add(parameters[(curIndex + i) % totalRows][j]);
                     clockCarrier.gradients.add(list);
-                }
+                }*/
 
                 // update the gradients and prepare the carrier to be sent to all workers.
                 synchronized (parameters) {
                     for (int i = 0; i < rows; i++) {
+                        List<Double> list = new ArrayList<Double>();
                         for (int j = 0; j < dimems; j++) {
                             double tmp = parameters[(i + curIndex + rows) % totalRows][j];
                             tmp += parameters[i + curIndex][j];
                             parameters[(i + curIndex + rows) % totalRows][j] = tmp;
+                            list.add(tmp);
                         }
+                        clockCarrier.gradients.add(list);
                     }
                 }
 
@@ -140,7 +144,7 @@ public class SSPParameterTable extends AbstractPSTable {
                     }
                 }
                 curIndex = (curIndex + rows) % totalRows;
-                print();
+                // print();
             }
 
         } catch (Exception e) {
@@ -155,17 +159,16 @@ public class SSPParameterTable extends AbstractPSTable {
         // if it is consistent.
         if (iter == curIteration.get()) return carrier;
         logger.info(hostId + " check local: " + iter + "remote: " + curIteration.get());
-
         // otherwise push the global parameter to the worker.
-        /*carrier.iterationNum = curIteration.get();
+        carrier.iterationNum = curIteration.get();
         carrier.gradients = new ArrayList<List<Double>>();
         for (int i=0; i<rows; i++) {
             List<Double> list = new ArrayList<Double>();
             for (int j=0; j<dimems; j++) list.add(parameters[curIndex + i][j]);
             carrier.gradients.add(list);
         }
-        logger.info("The carrier is: " + carrier);*/
-        return clockCarrier;
+        logger.info("The carrier is: " + carrier);
+        return carrier;
     }
 
     public void print() {

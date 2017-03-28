@@ -137,6 +137,9 @@ public class LRWorker extends MlAlgoWorker {
             }
             // replace the parameter.
             localStorage.globalIter = carrier.iterationNum;
+            if (carrier.gradients.size() == 0) {
+                carrier = client.read(hostId, tableId, localStorage.globalIter, 0);
+            }
             localStorage.replace(carrier);
         }
 
