@@ -18,7 +18,7 @@ import java.util.List;
  * Created by hadoop on 3/18/17.
  */
 public class MultiSSPWorkerTest {
-    private int stale = 20;
+    private int stale = 3;
     public static void main(String []args) {
         // create parameter table and init it. localhost 9000
         final MultiSSPWorkerTest workerTest = new MultiSSPWorkerTest();
@@ -43,11 +43,11 @@ public class MultiSSPWorkerTest {
 
         Thread t1 = new Thread(s1);
         Thread t2 = new Thread(s2);
-        // Thread t3 = new Thread(s3);
+        Thread t3 = new Thread(s3);
 
         t1.start();
         t2.start();
-        // t3.start();
+        t3.start();
     }
 
     public void initParameterServer(String host, int port, int timeout) {
@@ -58,7 +58,7 @@ public class MultiSSPWorkerTest {
         List<String> machines = new ArrayList<String>();
         machines.add("localhost:8080");
         machines.add("localhost:8081");
-        // machines.add("localhost:8082");
+        machines.add("localhost:8082");
         List<List<Double>> list1 = new ArrayList<List<Double>>();
         list1.add(list);
         Carrier carrier = new Carrier(0, list1);
