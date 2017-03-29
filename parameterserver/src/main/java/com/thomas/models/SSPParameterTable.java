@@ -2,6 +2,7 @@ package com.thomas.models;
 
 import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.worker.PSWorkerService;
+import com.thomas.utils.math.ListUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -18,13 +19,14 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 public class SSPParameterTable extends AbstractPSTable {
     public int staleValue;
 
-    // the start of current parameter index with no sync problem
-    public int curIndex;
+    public int globalClock;
 
     public AtomicIntegerArray updateRecorder;
 
     public Carrier clockCarrier;
 
+    public List<List<Double>> globalParameter;
+    public List<List<List<Double>>> caches;
     private Logger logger = Logger.getLogger(this.getClass());
 
     public SSPParameterTable() {
@@ -35,17 +37,20 @@ public class SSPParameterTable extends AbstractPSTable {
                              List<List<Double>>initials) {
         super(tableId, workerNum, dimems, rows, workers);
         this.staleValue = staleValue;
-        this.curIndex = 0;
+        this.globalClock = 0;
         this.clockCarrier = new Carrier(-1, null);
         // we init the parameters in the create table phase.
-        parameters = new double[rows + staleValue*rows][dimems];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < dimems; j++) {
-                parameters[i][j] = initials.get(i).get(j);
-            }
+        this.globalParameter = new ArrayList<List<Double>>();
+        for (int i=0; i<rows; i++) this.globalParameter.add(initials.get(i));
+
+        this.caches = new ArrayList<List<List<Double>>>();
+        for (int i=0; i<staleValue; i++) {
+            ArrayList<List<Double>> list = new ArrayList<List<Double>>();
+            for (int j=0; j<rows; j++) list.add(ListUtils.init(dimems, 0.0));
+            this.caches.add(list);
         }
-        int []arr = new int[staleValue+1];
-        this.updateRecorder = new AtomicIntegerArray(arr);
+
+        this.updateRecorder = new AtomicIntegerArray(new int[staleValue]);
 
         // init the nodes.
         for (String hostId: workers) {
@@ -56,24 +61,16 @@ public class SSPParameterTable extends AbstractPSTable {
     }
 
     @Override
-    public Carrier read(int t, int stale) {
-        // read from server clock buffer.
-        if (clockCarrier != null && clockCarrier.iterationNum == t && stale == 0 && clockCarrier.gradients.size() > 0)
-            return clockCarrier;
-
+    public Carrier read(int t, int updateNum) {
         Carrier carrier = new Carrier();
-        int curIter = curIteration.get();
-        if (stale <= staleValue && t >= curIter && t + stale <= curIter + staleValue) {
+        if (updateNum <= staleValue && t >= globalClock && t + updateNum <= globalClock + staleValue) {
             carrier.gradients = new ArrayList<List<Double>>();
             carrier.iterationNum = t;
-
-            int totalRows = (1+staleValue)*rows;
-
-            for (int i=0; i<(1+stale)*rows; i++) {
-                List<Double> list = new ArrayList<Double>();
-                int row = ((t - curIter)*rows + curIndex + i) % totalRows;
-                for (int j=0; j<dimems; j++) list.add(parameters[row][j]);
-                carrier.gradients.add(list);
+            // add global parameter.
+            carrier.gradients.add(globalParameter.get(0));
+            // append the updates delta.
+            for (int i=0; i<updateNum; i++) {
+                carrier.gradients.add(caches.get((t+i)%staleValue).get(0));
             }
         } else {
             carrier.iterationNum = -1;
@@ -87,64 +84,31 @@ public class SSPParameterTable extends AbstractPSTable {
         boolean result = true;
         try {
             int iterationId = carrier.iterationNum;
-            int curIter = curIteration.get();
             List<List<Double>> gradients = carrier.gradients;
-            if (iterationId < curIteration.get() || iterationId > staleValue+curIter || gradients== null) {
-                return false;
-            }
-
+            if (gradients == null) return false;
             int updateRowNums = gradients.size();
-            int totalRows = (1 + staleValue)*rows;
-            synchronized (parameters) {
-                for (int i = 0; i < updateRowNums; i++) {
-                    for (int j = 0; j < dimems; j++) {
-                        this.parameters[((iterationId - curIter) * rows + curIndex + i) % totalRows][j]
-                                += gradients.get(i).get(j);
-                    }
-                    logger.info(iterationId + " update is: " + gradients.get(i));
+
+            if (iterationId < globalClock || iterationId >= staleValue + globalClock || updateRowNums > staleValue) return false;
+
+            synchronized (caches) {
+                for (int i=0; i<updateRowNums; i++) {
+                    ListUtils.add(caches.get((iterationId+i)%staleValue).get(0), gradients.get(i));
                 }
             }
 
             // increase the count and decide whether the end.
-            updateRecorder.incrementAndGet(iterationId%(1+staleValue));
+            for (int i=0; i<updateRowNums; i++) updateRecorder.incrementAndGet((iterationId+i)%staleValue);
 
-            if (updateRecorder.get(curIter%(1+staleValue)) == workerNum) {
+            if (updateRecorder.get(globalClock%staleValue) == workerNum) {
                 // print();
-                updateRecorder.set(curIter%(1+staleValue), 0);
-
-                clockCarrier.iterationNum = curIteration.incrementAndGet();
-
-                if (clockCarrier.gradients == null) clockCarrier.gradients= new ArrayList<List<Double>>();
-                else clockCarrier.gradients.clear();
-
-                /*for (int i=0; i<rows; i++) {
-                    List<Double> list = new ArrayList<Double>();
-                    for (int j=0; j<dimems; j++) list.add(parameters[(curIndex + i) % totalRows][j]);
-                    clockCarrier.gradients.add(list);
-                }*/
+                updateRecorder.set(globalClock%staleValue, 0);
 
                 // update the gradients and prepare the carrier to be sent to all workers.
-                synchronized (parameters) {
-                    for (int i = 0; i < rows; i++) {
-                        List<Double> list = new ArrayList<Double>();
-                        for (int j = 0; j < dimems; j++) {
-                            double tmp = parameters[(i + curIndex + rows) % totalRows][j];
-                            tmp += parameters[i + curIndex][j];
-                            parameters[(i + curIndex + rows) % totalRows][j] = tmp;
-                            list.add(tmp);
-                        }
-                        clockCarrier.gradients.add(list);
-                    }
-                }
-
-                // reset to 0
+                ListUtils.add(globalParameter.get(0), caches.get(globalClock%staleValue).get(0));
                 for (int i=0; i<rows; i++) {
-                    for (int j=0; j<dimems; j++) {
-                        parameters[i+curIndex][j] = 0.0;
-                    }
+                    caches.get(globalClock%staleValue).set(i, ListUtils.init(dimems, 0.0));
                 }
-                curIndex = (curIndex + rows) % totalRows;
-                // print();
+                globalClock++;
             }
 
         } catch (Exception e) {
@@ -157,28 +121,11 @@ public class SSPParameterTable extends AbstractPSTable {
     public Carrier check(String hostId, int iter) {
         Carrier carrier = new Carrier(-1, null);
         // if it is consistent.
-        if (iter == curIteration.get()) return carrier;
+        if (iter == globalClock) return carrier;
+
         logger.info(hostId + " check local: " + iter + "remote: " + curIteration.get());
-        // otherwise push the global parameter to the worker.
-        carrier.iterationNum = curIteration.get();
-        carrier.gradients = new ArrayList<List<Double>>();
-        for (int i=0; i<rows; i++) {
-            List<Double> list = new ArrayList<Double>();
-            for (int j=0; j<dimems; j++) list.add(parameters[curIndex + i][j]);
-            carrier.gradients.add(list);
-        }
-        logger.info("The carrier is: " + carrier);
-        return carrier;
+
+        return read(globalClock, 0);
     }
 
-    public void print() {
-        System.out.println("current iteration is: " + curIteration.get());
-        System.out.println("current index is: " + curIndex);
-        for (int i=0; i<staleValue+1; i++) {
-            for (int j=0; j<dimems; j++) {
-                System.out.print(" " + parameters[i][j]);
-            }
-            System.out.println("");
-        }
-    }
 }
