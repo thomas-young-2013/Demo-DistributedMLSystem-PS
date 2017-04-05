@@ -93,22 +93,21 @@ public class SSPParameterTable extends AbstractPSTable {
             synchronized (caches) {
                 for (int i=0; i<updateRowNums; i++) {
                     ListUtils.add(caches.get((iterationId+i)%staleValue).get(0), gradients.get(i));
+
+                    updateRecorder.incrementAndGet((iterationId+i)%staleValue);
+
+                    if (iterationId + i == globalClock && updateRecorder.get(globalClock%staleValue) == workerNum) {
+                        // print();
+                        updateRecorder.set(globalClock%staleValue, 0);
+
+                        // update the gradients and prepare the carrier to be sent to all workers.
+                        ListUtils.add(globalParameter.get(0), caches.get(globalClock%staleValue).get(0));
+                        for (int j=0; j<rows; j++) {
+                            caches.get(globalClock%staleValue).set(j, ListUtils.init(dimems, 0.0));
+                        }
+                        globalClock++;
+                    }
                 }
-            }
-
-            // increase the count and decide whether the end.
-            for (int i=0; i<updateRowNums; i++) updateRecorder.incrementAndGet((iterationId+i)%staleValue);
-
-            if (updateRecorder.get(globalClock%staleValue) == workerNum) {
-                // print();
-                updateRecorder.set(globalClock%staleValue, 0);
-
-                // update the gradients and prepare the carrier to be sent to all workers.
-                ListUtils.add(globalParameter.get(0), caches.get(globalClock%staleValue).get(0));
-                for (int i=0; i<rows; i++) {
-                    caches.get(globalClock%staleValue).set(i, ListUtils.init(dimems, 0.0));
-                }
-                globalClock++;
             }
 
         } catch (Exception e) {

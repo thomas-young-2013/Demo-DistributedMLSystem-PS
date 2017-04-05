@@ -20,7 +20,7 @@ import java.util.List;
  * Created by hadoop on 3/18/17.
  */
 public class MultiSSPWorkerTest {
-    private int stale = 5;
+    private int stale = 3;
     public static void main(String []args) {
         // create parameter table and init it. localhost 9000
         final MultiSSPWorkerTest workerTest = new MultiSSPWorkerTest();

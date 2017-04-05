@@ -13,15 +13,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by hadoop on 3/16/17.
+ * Created by hadoop on 4/5/17.
  */
-public class SSPTableTest {
+public class SSPTableTest2 {
     public static final String SERVER_IP = "localhost";
     public static final int SERVER_PORT = 8000;
     public static final int TIMEOUT = 30000;
 
     public static void main(String[] args) {
-        SSPTableTest worker = new SSPTableTest();
+        SSPTableTest2 worker = new SSPTableTest2();
         worker.run();
     }
 
@@ -31,30 +31,32 @@ public class SSPTableTest {
         try {
             transport = new TSocket(SERVER_IP, SERVER_PORT, TIMEOUT);
             transport.open();
-            // TProtocol protocol = new TCompactProtocol(transport);
             TProtocol protocol = new TBinaryProtocol(transport);
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
 
-            /*ArrayList<Double> list = new ArrayList<Double>();
+            ArrayList<Double> list = new ArrayList<Double>();
             list.add(0.1);
             list.add(0.1);
             list.add(0.1);
             List<String> machines = new ArrayList<String>();
-            machines.add("worker1");
-            machines.add("worker2");
+            machines.add("localhost:8080");
+            machines.add("localhost:8081");
             List<List<Double>> list1 = new ArrayList<List<Double>>();
             list1.add(list);
-            Carrier carrier = new Carrier(0, list1);*/
-
-            // client.create("SSP:3", "lr", machines, carrier);
-            /*Carrier carrier1 = client.read(SERVER_IP, "lr", 1, 3);
-            System.out.println(carrier1);*/
-
+            Carrier carrier = new Carrier(0, list1);
+            if (false) {
+                client.create("SSP:3", "lr", machines, carrier);
+                Carrier carrier1 = client.read(SERVER_IP, "lr", 0, 0);
+                System.out.println(carrier1);
+            }
+            System.out.println(client.check("localhost", "lr", 3));
             // list1.add(list);
-            /*Carrier carrier2 = new Carrier(5, list1);
+            /*Carrier carrier2 = new Carrier(2, list1);
             client.update(SERVER_IP, "lr", carrier2);
-            carrier2.iterationNum = 6;
-            client.update(SERVER_IP, "lr", carrier2);*/
+            // carrier2.iterationNum = 1;
+            // client.update(SERVER_IP, "lr", carrier2);
+            Carrier carrier1 = client.read(SERVER_IP, "lr", 2, 3);
+            System.out.println(carrier1);*/
 
             /*
             * for two dimems
@@ -77,9 +79,6 @@ public class SSPTableTest {
             System.out.println(carrier1);*/
             /*carrier.iterationNum = 4;
             client.update(SERVER_IP, "lr", carrier);*/
-
-            Carrier carrier3 = client.read(SERVER_IP, "lr", 1001, 0);
-            System.out.println(carrier3);
 
         } catch (TTransportException e) {
             e.printStackTrace();
