@@ -24,7 +24,7 @@ public class WorkerServer {
 
     public static void init(String []args) {
 
-        PropertyConfigurator.configure("config/worker-log4j.properties");
+        PropertyConfigurator.configure("conf/worker-log4j.properties");
 
         // init the config.
         props = new HashMap<String, String>();

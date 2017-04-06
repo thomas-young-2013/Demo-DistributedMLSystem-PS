@@ -17,7 +17,7 @@ public class PSApplication {
      * @param args
      */
     public static void main(String[] args) {
-        PropertyConfigurator.configure("config/log4j.properties");
+        PropertyConfigurator.configure("conf/log4j.properties");
 
         PSApplication application = new PSApplication();
         application.run();
