@@ -4,21 +4,14 @@ import com.thomas.models.Master;
 import com.thomas.thrift.master.PMasterService;
 import com.thomas.utils.ResourceLoader;
 import org.apache.log4j.PropertyConfigurator;
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.server.TServer;
-import org.apache.thrift.server.TSimpleServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
-
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
- * Created by hadoop on 3/12/17.
+ * Created by thomas young on 3/12/17.
  */
 public class PMasterServer {
 

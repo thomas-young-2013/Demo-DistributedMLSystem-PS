@@ -5,6 +5,7 @@ import com.thomas.models.PSTable;
 import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.utils.constant.ParallelType;
+import com.thomas.utils.math.ListUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -22,7 +23,7 @@ import static com.thomas.utils.constant.DefaultConstant.TIMEOUT;
  */
 public class PSUtils {
 
-    public static void createTable(PSTable psTable, ArrayList<String> machines, ArrayList<Double> initials) {
+    public static void createTable(PSTable psTable, ArrayList<String> machines, String extraParams) {
         Node node = psTable.node;
         TTransport transport = null;
 
@@ -32,8 +33,20 @@ public class PSUtils {
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
 
+            // to do list: support customized initialization such as rand(), or zero() and so on..
+            String []params = extraParams.split(":");
+            int rows = Integer.parseInt(params[0]);
+            int dimems = Integer.parseInt(params[1]);
+            String initMethod = params[2];
+            if (initMethod.equalsIgnoreCase("zero")) {
+                // to do list: support many initialization methods.
+            }
+
             List<List<Double>> list = new ArrayList<List<Double>>();
-            list.add(initials);
+            for (int i=0; i<rows; i++) {
+                list.add(ListUtils.init(dimems, 0.0));
+            }
+
             Carrier carrier = new Carrier(0, list);
             client.create(psTable.parallelType, psTable.tableId, machines, carrier);
 
@@ -53,7 +66,6 @@ public class PSUtils {
         ArrayList<Double> params = new ArrayList<Double>();
         try {
             transport = new TSocket(node.hostId, node.port, TIMEOUT);
-            // TProtocol protocol = new TCompactProtocol(transport);
             TProtocol protocol = new TBinaryProtocol(transport);
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();

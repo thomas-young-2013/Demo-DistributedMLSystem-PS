@@ -4,7 +4,9 @@ struct JobInfo {
   1: string jobType,
   2: double learningRate,
   3: list<string> dataPaths,
-  4: i32 iteNum
+  4: i32 iteNum,
+  5: string extraParams,
+  6: string parallelType
 }
 
 struct ExecInfo {

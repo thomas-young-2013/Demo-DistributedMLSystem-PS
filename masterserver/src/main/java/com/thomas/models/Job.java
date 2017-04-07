@@ -19,6 +19,7 @@ public class Job {
     public double learningRate;
     public List<String> dataPaths;
     public int status;
+    public String extraParams;
 
     public List<Node> parameterServers;
     public List<Node> workers;
@@ -34,6 +35,7 @@ public class Job {
         this.learningRate = jobInfo.learningRate;
         this.dataPaths = jobInfo.dataPaths;
         this.status = NodeStatus.RUNNING;
+        this.extraParams = jobInfo.extraParams;
 
         this.parameterServers = new ArrayList<Node>();
         this.workers = new ArrayList<Node>();

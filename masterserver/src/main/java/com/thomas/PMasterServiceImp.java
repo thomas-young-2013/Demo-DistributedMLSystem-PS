@@ -22,7 +22,7 @@ public class PMasterServiceImp implements PMasterService.Iface {
     }
 
     public JobResult getJobResult(long jobId) {
-        return new JobResult();
+        return master.getJobResult(jobId);
     }
 
     public boolean getJobDone(String hostId, long jobId, ExecInfo execInfo) {

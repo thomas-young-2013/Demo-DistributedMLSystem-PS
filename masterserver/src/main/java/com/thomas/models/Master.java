@@ -42,18 +42,14 @@ public class Master {
         PSTable psTable = new PSTable();
         psTable.node = pserver;
         psTable.tableId = job.jobType + job.jobId;
-        psTable.parallelType = ParallelType.SSP;
-
+        psTable.parallelType = jobInfo.parallelType;
         job.tables.add(psTable);
 
-        // assign data to this job node and assign the job config.
-        for (int i = 0; i < job.workers.size(); i++) {
-            JobConfig jobConfig = createJobConfig(job, i);
-            job.jobConfigs.add(jobConfig);
-        }
-
         try {
-            createParameterTable(psTable, job.workers);
+            // assign data to this job node and assign the job config.
+            initJobConfigs(job);
+
+            createParameterTable(psTable, job.workers, jobInfo.extraParams);
 
             // at last, assign the job to the workers.
             createWorkers(job);
@@ -69,33 +65,34 @@ public class Master {
 
     public JobResult getJobResult(long jobId) {
         Job job = jobs.get(jobId);
-        JobResult jobResult = new JobResult();
-        jobResult.setParams(job.getParamsResult());
-        jobResult.setExecInfos(job.execInfo);
-        return jobResult;
+        if (job.execInfo.size() == cluster.workers.size()) {
+            JobResult jobResult = new JobResult();
+            // get final params from server.
+            jobResult.setParams(job.getParamsResult());
+            jobResult.setExecInfos(job.execInfo);
+            return jobResult;
+        }
+        return null;
     }
 
     public boolean getJobDone(String hostId, long jobId, ExecInfo execInfo) {
-        jobs.get(jobId).execInfo.add(execInfo);
-        return true;
+        try {
+            jobs.get(jobId).execInfo.add(execInfo);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public boolean isAlive() {
         return true;
     }
 
-    public void createParameterTable(PSTable psTable, List<Node> workers) throws Exception {
+    public void createParameterTable(PSTable psTable, List<Node> workers, String extraParams) throws Exception {
         ArrayList<String> machines = new ArrayList<String>();
         for (Node node: workers) machines.add(node.hostId+":"+node.port);
-
-        // to do list: support customized initialization such as rand(), or zero() and so on..
-
-        ArrayList<Double> initials = new ArrayList<Double>();
-        initials.add(0.0);
-        initials.add(0.0);
-        initials.add(0.0);
-
-        PSUtils.createTable(psTable, machines, initials);
+        PSUtils.createTable(psTable, machines, extraParams);
     }
 
     public void createWorkers(Job job) {
@@ -105,18 +102,31 @@ public class Master {
         }
     }
 
-    public JobConfig createJobConfig(Job job, int index) {
-        JobConfig jobConfig = new JobConfig();
-        jobConfig.setIteNum(job.iteNum);
-        jobConfig.setJobKey(job.jobId);
-        jobConfig.setJobType(job.jobType);
-        jobConfig.setLearningRate(job.learningRate);
-        jobConfig.setDataPath(job.dataPaths.get(index % job.dataPaths.size()));
+    public void initJobConfigs(Job job) throws Exception {
+        for (int i=0; i<job.workers.size(); i++) {
+            JobConfig jobConfig = new JobConfig();
 
-        PSTable table = job.tables.get(0);
-        jobConfig.setServerId(table.node.hostId);
-        jobConfig.setServerPort(table.node.port);
-        jobConfig.setTableId(table.tableId);
-        return jobConfig;
+            jobConfig.jobKey = job.jobId;
+            jobConfig.jobType = job.jobType;
+            jobConfig.learningRate = job.learningRate;
+
+            jobConfig.iteNum = job.iteNum;
+            jobConfig.serverId = job.parameterServers.get(0).hostId;
+            jobConfig.serverPort = job.parameterServers.get(0).port;
+            jobConfig.tableId = job.tables.get(0).tableId;
+            String[] tmp = job.tables.get(0).parallelType.split(":");
+            jobConfig.parallelType = tmp[0];
+            if (tmp.length > 1) jobConfig.stale = Integer.parseInt(tmp[1]);
+
+            String[] params = job.extraParams.split(":");
+            if (params.length > 2) {
+                jobConfig.rowNum = Integer.parseInt(params[0]);
+                jobConfig.dimems = Integer.parseInt(params[1]);
+            } else {
+                throw new Exception("init failed!");
+            }
+            jobConfig.dataPath = job.dataPaths.get(i % job.dataPaths.size());
+            job.jobConfigs.add(jobConfig);
+        }
     }
 }
