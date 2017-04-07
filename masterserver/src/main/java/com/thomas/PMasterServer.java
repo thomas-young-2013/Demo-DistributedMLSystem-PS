@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 public class PMasterServer {
 
     private static PMasterServiceImp pMaster;
-    private static Logger logger = Logger.getLogger("MasterServer");
+    private static Logger logger = Logger.getLogger("PMasterServer");
     public static Properties props;
     // 9000 default for master node.
     private static int port = 9000;

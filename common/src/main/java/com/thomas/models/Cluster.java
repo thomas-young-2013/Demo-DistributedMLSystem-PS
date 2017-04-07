@@ -49,4 +49,12 @@ public class Cluster {
             servers.add(new Node(tmp[0], Integer.parseInt(tmp[1])));
         }
     }
+
+    @Override
+    public String toString() {
+        return "Cluster{" +
+                "workers=" + workers +
+                ", servers=" + servers +
+                '}';
+    }
 }

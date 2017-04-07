@@ -9,4 +9,13 @@ public class PSTable {
     public Node node;
     public String tableId;
     public String parallelType;
+
+    @Override
+    public String toString() {
+        return "PSTable{" +
+                "node=" + node +
+                ", tableId='" + tableId + '\'' +
+                ", parallelType='" + parallelType + '\'' +
+                '}';
+    }
 }

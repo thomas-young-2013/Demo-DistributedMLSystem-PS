@@ -4,7 +4,6 @@ import com.thomas.thrift.master.ExecInfo;
 import com.thomas.thrift.master.JobInfo;
 import com.thomas.thrift.master.JobResult;
 import com.thomas.thrift.worker.JobConfig;
-import com.thomas.utils.constant.ParallelType;
 import com.thomas.utils.thrift.PSUtils;
 import com.thomas.utils.thrift.WorkerUtils;
 
@@ -12,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * Created by hadoop on 3/12/17.
@@ -19,6 +19,7 @@ import java.util.Properties;
 public class Master {
     private Cluster cluster;
     private HashMap<Long, Job> jobs;
+    private static Logger logger = Logger.getLogger("Master");
 
     public void init(Properties props) {
         // init cluster info.
@@ -26,6 +27,7 @@ public class Master {
         // initialize the cluster from config
         cluster.init(props);
         jobs = new HashMap<Long, Job>();
+        logger.info("after init: " + cluster);
     }
 
     public long createJob(JobInfo jobInfo) {
@@ -97,8 +99,16 @@ public class Master {
 
     public void createWorkers(Job job) {
         for (int i=0; i<job.workers.size(); i++) {
+            final Node worker= job.workers.get(i);
+            final JobConfig jobConfig = job.jobConfigs.get(i);
+            Runnable runnable = new Runnable() {
+                public void run() {
+                    WorkerUtils.assignJob(worker, jobConfig);
+                }
+            };
             // send config info to each worker.
-            WorkerUtils.assignJob(job.workers.get(i), job.jobConfigs.get(i));
+            new Thread(runnable).start();
+            logger.info(String.format("worker is: %s, job config is: %s", worker.toString(), jobConfig.toString()));
         }
     }
 
