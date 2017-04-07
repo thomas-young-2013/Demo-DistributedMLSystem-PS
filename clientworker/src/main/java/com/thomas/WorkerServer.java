@@ -1,38 +1,36 @@
 package com.thomas;
 
 import com.thomas.thrift.worker.PSWorkerService;
+import com.thomas.utils.ResourceLoader;
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.server.TServer;
-import org.apache.thrift.server.TSimpleServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 
-import java.util.HashMap;
-import java.util.logging.Logger;
+import java.util.Properties;
 
 /**
  * Created by hadoop on 3/11/17.
  */
 public class WorkerServer {
-    private static int port = 8080;
-    private static PSWorkerImp psWorker;
-    private static Logger logger = Logger.getLogger("WorkerServer");
-    private static HashMap<String, String> props;
+    private int port = 8080;
+    private PSWorkerImp psWorker;
+    private PSWorkerService.Processor processor;
+    private Logger logger = Logger.getLogger(this.getClass());
+    public Properties props;
 
-    private static PSWorkerService.Processor processor;
-
-    public static void init(String []args) {
-
+    public void init(String []args) {
+        // configure the log.
         PropertyConfigurator.configure("conf/worker-log4j.properties");
 
-        // init the config.
-        props = new HashMap<String, String>();
-        for (String str: args) {
-            String [] d = str.split(":");
-            props.put(d[0], d[1]);
-        }
-        if (props.containsKey("-p")) port = Integer.parseInt(props.get("-p"));
+        props = new Properties();
+        // load properties from file.
+        ResourceLoader.propsFileParser(props, "conf/worker.properties");
+        // load part properties from command, if conflicts, override the one in file.
+        ResourceLoader.cmdParser(props, args);
+        if (props.getProperty("port") != null) port = Integer.parseInt(props.getProperty("port"));
+
         // and init the ps worker.
         psWorker = new PSWorkerImp();
 
@@ -40,11 +38,12 @@ public class WorkerServer {
     }
 
     public static void main(String []args) {
-        init(args);
-        run();
+        WorkerServer workerServer = new WorkerServer();
+        workerServer.init(args);
+        workerServer.run();
     }
 
-    public static void run() {
+    public void run() {
         try {
             logger.info("WorkerServer start at Port: " + port);
 
@@ -53,7 +52,7 @@ public class WorkerServer {
             server.serve();
 
         } catch (Exception e) {
-            System.out.println("Server start error");
+            logger.error("WorkerServer start error!");
             e.printStackTrace();
         }
     }

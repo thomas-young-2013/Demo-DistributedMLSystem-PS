@@ -101,7 +101,8 @@ public class LRWorker extends MlAlgoWorker {
             if (properties.parallelType.equals(ParallelType.BSP)) lr();
             if (properties.parallelType.equals(ParallelType.SSP)) lrSSP();
             long endTime = System.currentTimeMillis();
-            System.out.println("it costs: " + (endTime-startTime)/1000.0 + "s");
+            // System.out.println("it costs: " + (endTime-startTime)/1000.0 + "s");
+            logger.info("it costs: " + (endTime-startTime)/1000.0 + "s");
 
         } catch (TTransportException e) {
             e.printStackTrace();

@@ -8,20 +8,20 @@ import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import java.util.Properties;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 /**
  * Created by thomas young on 3/12/17.
  */
 public class PMasterServer {
 
-    private static PMasterServiceImp pMaster;
-    private static Logger logger = Logger.getLogger("PMasterServer");
-    public static Properties props;
+    private PMasterServiceImp pMaster;
+    private Logger logger = Logger.getLogger(this.getClass());
+    public Properties props;
     // 9000 default for master node.
-    private static int port = 9000;
+    private int port = 9000;
 
-    public static void init(String []args) {
+    public void init(String []args) {
         // init the log system.
         PropertyConfigurator.configure("conf/master-log4j.properties");
 
@@ -40,11 +40,12 @@ public class PMasterServer {
     }
 
     public static void main(String []args) {
-        init(args);
-        run();
+        PMasterServer pMasterServer = new PMasterServer();
+        pMasterServer.init(args);
+        pMasterServer.run();
     }
 
-    public static void run() {
+    public void run() {
         try {
             logger.info("Master Server start at: " + port);
 
