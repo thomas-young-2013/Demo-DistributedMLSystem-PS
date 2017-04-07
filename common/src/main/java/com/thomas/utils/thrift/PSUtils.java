@@ -28,7 +28,6 @@ public class PSUtils {
 
         try {
             transport = new TSocket(node.hostId, node.port, TIMEOUT);
-            // TProtocol protocol = new TCompactProtocol(transport);
             TProtocol protocol = new TBinaryProtocol(transport);
             ParameterServerService.Client client = new ParameterServerService.Client(protocol);
             transport.open();
@@ -36,7 +35,7 @@ public class PSUtils {
             List<List<Double>> list = new ArrayList<List<Double>>();
             list.add(initials);
             Carrier carrier = new Carrier(0, list);
-            client.create(ParallelType.BSP, psTable.tableId, machines, carrier);
+            client.create(psTable.parallelType, psTable.tableId, machines, carrier);
 
         } catch (TTransportException e) {
             e.printStackTrace();

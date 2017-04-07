@@ -2,12 +2,19 @@ package com.thomas;
 
 import com.thomas.models.Master;
 import com.thomas.thrift.master.PMasterService;
+import com.thomas.utils.ResourceLoader;
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TSimpleServer;
+import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
@@ -15,24 +22,28 @@ import java.util.logging.Logger;
  */
 public class PMasterServer {
 
-    private static int port = 8080;
     private static PMasterServiceImp pMaster;
     private static Logger logger = Logger.getLogger("MasterServer");
-    private static HashMap<String, String> props;
+    public static Properties props;
+    // 9000 default for master node.
+    private static int port = 9000;
 
     public static void init(String []args) {
-        // init the config.
-        props = new HashMap<String, String>();
-        for (String str: args) {
-            String [] d = str.split(":");
-            props.put(d[0], d[1]);
-        }
-        if (props.containsKey("-p")) port = Integer.parseInt(props.get("-p"));
+        // init the log system.
+        PropertyConfigurator.configure("conf/master-log4j.properties");
+
+        props = new Properties();
+        // load properties from file.
+        ResourceLoader.propsFileParser(props, "conf/master.properties");
+        // load part properties from command, if conflicts, override the one in file.
+        ResourceLoader.cmdParser(props, args);
+        if (props.getProperty("port") != null) port = Integer.parseInt(props.getProperty("port"));
 
         // init the master from property file: server and worker info.
         Master master = new Master();
-        master.init();
+        master.init(props);
         pMaster = new PMasterServiceImp(master);
+        // System.out.println(props);
     }
 
     public static void main(String []args) {
@@ -48,10 +59,8 @@ public class PMasterServer {
                     new PMasterService.Processor<PMasterService.Iface>(pMaster);
 
             TServerSocket serverTransport = new TServerSocket(port);
-            TServer.Args tArgs = new TServer.Args(serverTransport);
-            tArgs.processor(tprocessor);
-            tArgs.protocolFactory(new TCompactProtocol.Factory());
-            TServer server = new TSimpleServer(tArgs);
+            TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(tprocessor));
+
             server.serve();
 
         } catch (Exception e) {

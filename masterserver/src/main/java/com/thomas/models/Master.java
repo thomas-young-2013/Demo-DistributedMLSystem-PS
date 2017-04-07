@@ -4,28 +4,27 @@ import com.thomas.thrift.master.ExecInfo;
 import com.thomas.thrift.master.JobInfo;
 import com.thomas.thrift.master.JobResult;
 import com.thomas.thrift.worker.JobConfig;
+import com.thomas.utils.constant.ParallelType;
 import com.thomas.utils.thrift.PSUtils;
 import com.thomas.utils.thrift.WorkerUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Created by hadoop on 3/12/17.
  */
 public class Master {
     private Cluster cluster;
-
     private HashMap<Long, Job> jobs;
 
-    /*
-    * initialize the cluster from config
-    * */
-    public void init() {
+    public void init(Properties props) {
         // init cluster info.
         cluster = new Cluster();
-
+        // initialize the cluster from config
+        cluster.init(props);
         jobs = new HashMap<Long, Job>();
     }
 
@@ -34,14 +33,17 @@ public class Master {
         Job job = new Job(jobId, jobInfo);
 
         // assign workers and servers to this job.
+        // to do list: assignment algorithm.
         for (Node node: cluster.workers) job.workers.add(node);
-        job.parameterServers.add(cluster.servers.get(0));
+        for (Node node: cluster.servers) job.parameterServers.add(node);
 
         // assign parameter table.
         Node pserver = job.parameterServers.get(0);
         PSTable psTable = new PSTable();
         psTable.node = pserver;
         psTable.tableId = job.jobType + job.jobId;
+        psTable.parallelType = ParallelType.SSP;
+
         job.tables.add(psTable);
 
         // assign data to this job node and assign the job config.
@@ -84,11 +86,10 @@ public class Master {
 
     public void createParameterTable(PSTable psTable, List<Node> workers) throws Exception {
         ArrayList<String> machines = new ArrayList<String>();
-        for (Node node: workers) machines.add(node.hostId);
+        for (Node node: workers) machines.add(node.hostId+":"+node.port);
 
-        /*
-        * TO DO LIST: support customized initialization such as rand(), or zero() and so on..
-        * */
+        // to do list: support customized initialization such as rand(), or zero() and so on..
+
         ArrayList<Double> initials = new ArrayList<Double>();
         initials.add(0.0);
         initials.add(0.0);

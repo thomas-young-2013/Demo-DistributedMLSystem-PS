@@ -17,7 +17,7 @@ public class PSApplication {
      * @param args
      */
     public static void main(String[] args) {
-        PropertyConfigurator.configure("conf/log4j.properties");
+        PropertyConfigurator.configure("conf/server-log4j.properties");
 
         PSApplication application = new PSApplication();
         application.run();
@@ -31,14 +31,8 @@ public class PSApplication {
                     new ParameterServerService.Processor<ParameterServerService.Iface>(new ParameterServerServiceImp());
 
             TServerSocket serverTransport = new TServerSocket(SERVER_PORT);
-            /*TServer.Args tArgs = new TServer.Args(serverTransport);
-            tArgs.processor(tprocessor);
-
-            tArgs.protocolFactory(new TCompactProtocol.Factory());*/
-
             TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(tprocessor));
 
-            // TServer server = new TSimpleServer(tArgs);
             server.serve();
 
         } catch (Exception e) {
