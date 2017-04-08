@@ -27,6 +27,22 @@ create_worker() {
     chmod 777 "$expe_home/worker${t}/bin/stop.sh"
 }
 
+create_server_master() {
+    cp -rf "${app_home}/project/out/distributedMLSystem/server/" "$expe_home/"
+    cp -rf "${app_home}/project/out/distributedMLSystem/master/" "$expe_home/"
+
+    # chmod
+    chmod 777 "$expe_home/master/bin/start.sh"
+    chmod 777 "$expe_home/master/bin/stop.sh"
+
+    chmod 777 "$expe_home/server/bin/start.sh"
+    chmod 777 "$expe_home/server/bin/stop.sh"
+
+    # configure the master properties
+    config_file="$expe_home/master/conf/master.properties"
+    python "${py_script_home}/config-reviser.py" $config_file "$1"
+}
+
 run() {
     process_args "$@"
 
@@ -37,6 +53,9 @@ run() {
     else
         exit 1
     fi
+
+    # prepare the server and master
+    create_server_master $n_worker
 
     # prepare the workers
     t=1
