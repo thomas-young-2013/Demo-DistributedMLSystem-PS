@@ -1,9 +1,6 @@
 #!/bin/bash
 
-echo "CONFIRM: execute this script in ROOT directory of this project!!!"
-echo `pwd`
-echo "start to generate the executables in 3 seconds.."
-sleep 2
+# echo "CONFIRM: execute this script in ROOT directory of this project!!!"
 
 app_home=`pwd`
 
