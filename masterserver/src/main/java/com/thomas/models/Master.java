@@ -6,12 +6,12 @@ import com.thomas.thrift.master.JobResult;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.utils.thrift.PSUtils;
 import com.thomas.utils.thrift.WorkerUtils;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 /**
  * Created by hadoop on 3/12/17.
@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 public class Master {
     private Cluster cluster;
     private HashMap<Long, Job> jobs;
-    private static Logger logger = Logger.getLogger("Master");
+    private Logger logger = Logger.getLogger(this.getClass());
 
     public void init(Properties props) {
         // init cluster info.
@@ -67,7 +67,7 @@ public class Master {
 
     public JobResult getJobResult(long jobId) {
         Job job = jobs.get(jobId);
-        if (job.execInfo.size() == cluster.workers.size()) {
+        if (job != null && job.execInfo.size() == cluster.workers.size()) {
             JobResult jobResult = new JobResult();
             // get final params from server.
             jobResult.setParams(job.getParamsResult());

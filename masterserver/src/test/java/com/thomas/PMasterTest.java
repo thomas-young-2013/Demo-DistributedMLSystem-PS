@@ -22,11 +22,12 @@ public class PMasterTest {
         final PMasterTest workerTest = new PMasterTest();
 
         // start a worker and run a job.
-        if (false) {
-            long jobId = workerTest.startWorker("localhost", 8999, 30000);
+        long jobId;
+        if (true) {
+            jobId = workerTest.startWorker("localhost", 8999, 30000);
             System.out.println("the job id is: " + jobId);
         }
-        workerTest.getJobResult(1491622327337L, "localhost", 8999, 30000);
+        // workerTest.getJobResult(jobId, "localhost", 8999, 30000);
     }
 
     public long startWorker(String host, int port, int timeout) {
@@ -49,7 +50,7 @@ public class PMasterTest {
             jobInfo.learningRate = 0.009;
             jobInfo.dataPaths = dataPath;
             jobInfo.iteNum = 1000;
-            // jobInfo.parallelType="SSP:3";
+            // jobInfo.parallelType="SSP:5";
             jobInfo.parallelType="BSP";
             jobInfo.extraParams="1:3:ZERO";
 

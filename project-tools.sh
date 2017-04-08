@@ -18,6 +18,11 @@ deploy() {
     $script
 }
 
+test() {
+    rm -rf ~/Desktop/distributedMLSystem
+    cp -rf ./project/out/distributedMLSystem/ ~/Desktop/
+}
+
 ###  ------------------------------- ###
 ###  Start of customized settings    ###
 ###  ------------------------------- ###
@@ -29,6 +34,7 @@ Usage: $script_name [options]
   -b | -build        maven build this project.
   -d | -deploy        produce the binary.
   -h | -help         help messages.
+  -t | -test         test in local
 EOM
 }
 
@@ -36,8 +42,9 @@ EOM
 process_args () {
     case "$1" in
        -h|-help) usage; exit 1 ;;
-    -d|-deploy) deploy ;;
+     -d|-deploy) deploy ;;
       -b|-build) build ;;
+       -t|-test) test ;;
     esac
 }
 
