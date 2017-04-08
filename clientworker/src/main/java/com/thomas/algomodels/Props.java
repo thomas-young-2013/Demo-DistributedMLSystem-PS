@@ -3,7 +3,8 @@ package com.thomas.algomodels;
 /**
  * Created by hadoop on 3/11/17.
  */
-public class Properties {
+public class Props {
+    public long jobId;
     public int iterationNum;
     public double learningRate;
     public String PSServerId;

@@ -1,8 +1,11 @@
 package com.thomas;
 
+import com.thomas.algomodels.Props;
 import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.worker.JobConfig;
 import com.thomas.thrift.worker.PSWorkerService;
+
+import java.util.Properties;
 
 /**
  * Created by hadoop on 3/11/17.
@@ -10,8 +13,8 @@ import com.thomas.thrift.worker.PSWorkerService;
 public class PSWorkerImp implements PSWorkerService.Iface {
     private PSWorker psWorker;
 
-    public PSWorkerImp() {
-        psWorker = new PSWorker();
+    public PSWorkerImp(Properties props) {
+        psWorker = new PSWorker(props);
     }
 
     public void runJob(JobConfig jobConfig) {

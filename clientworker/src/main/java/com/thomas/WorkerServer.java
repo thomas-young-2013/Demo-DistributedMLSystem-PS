@@ -32,7 +32,7 @@ public class WorkerServer {
         if (props.getProperty("port") != null) port = Integer.parseInt(props.getProperty("port"));
 
         // and init the ps worker.
-        psWorker = new PSWorkerImp();
+        psWorker = new PSWorkerImp(props);
 
         processor = new PSWorkerService.Processor<PSWorkerService.Iface>(psWorker);
     }

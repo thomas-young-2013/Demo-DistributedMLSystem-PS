@@ -2,12 +2,15 @@ package com.thomas.algorithm;
 
 import Jama.Matrix;
 import com.thomas.algomodels.*;
+import com.thomas.models.Node;
+import com.thomas.thrift.master.ExecInfo;
 import com.thomas.thrift.server.Carrier;
 import com.thomas.thrift.server.ParameterServerService;
 import com.thomas.utils.DataInfo;
 import com.thomas.utils.constant.NodeStatus;
 import com.thomas.utils.constant.ParallelType;
 import com.thomas.utils.math.MatrixUtils;
+import com.thomas.utils.thrift.MasterUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -18,6 +21,7 @@ import org.apache.thrift.transport.TTransportException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import static com.thomas.utils.DataReader.getDataInfo;
 import static com.thomas.utils.DataReader.getTrainData;
@@ -33,6 +37,9 @@ public class LRWorker extends MlAlgoWorker {
     private int iteNum, m, n;
     private Matrix X, A, y;
     private String tableId;
+    private double costMetric;
+    private int time2sleep = 1;
+    private Node masterNode;
 
     private Logger logger = Logger.getLogger(this.getClass());
 
@@ -40,8 +47,8 @@ public class LRWorker extends MlAlgoWorker {
         super();
     }
 
-    public LRWorker(MlAlgoType mlAlgoType, Properties properties) {
-        super(mlAlgoType, properties);
+    public LRWorker(MlAlgoType mlAlgoType, Props properties, Properties props) {
+        super(mlAlgoType, properties, props);
 
         // init the worker props.
         init();
@@ -54,14 +61,14 @@ public class LRWorker extends MlAlgoWorker {
             iteNum = properties.iterationNum;
             lr = properties.learningRate;
             tableId = properties.PSTableId;
-            hostId = "worker1";
+            hostId = props.getProperty("host", "worker");
+            time2sleep = Integer.parseInt(props.getProperty("time2sleep", "1"));
+            String master = props.getProperty("master", "localhost:8999");
+            this.masterNode = Node.getNodeFromString(master);
 
             this.buffer = new Buffer(properties.rowNum, properties.dimems, properties.stale);
 
-            /*
-            * about Linear Regression Computation
-            * */
-
+            // about Linear Regression Computation
             DataInfo dataInfo = getDataInfo(properties.dataPath);
             m = dataInfo.rowNum;
             n = dataInfo.colNum;
@@ -104,6 +111,11 @@ public class LRWorker extends MlAlgoWorker {
             // System.out.println("it costs: " + (endTime-startTime)/1000.0 + "s");
             logger.info("it costs: " + (endTime-startTime)/1000.0 + "s");
 
+            // after training, report the result to master node.
+            ExecInfo execInfo = new ExecInfo(endTime-startTime, costMetric, hostId);
+            if (MasterUtils.getJobDone(masterNode, properties.jobId, execInfo)) logger.info("result report success!");
+            else logger.error("result report error!");
+
         } catch (TTransportException e) {
             e.printStackTrace();
         } catch (TException e) {
@@ -122,7 +134,7 @@ public class LRWorker extends MlAlgoWorker {
             // check the consistency of global iteration in local and remote.
             carrier = client.check(hostId, tableId, buffer.globalClock);
             if (carrier.iterationNum != -1) break;
-            Thread.sleep(1);
+            Thread.sleep(time2sleep);
         }
 
         if (carrier == null) carrier = client.check(hostId, tableId, buffer.globalClock);
@@ -208,7 +220,7 @@ public class LRWorker extends MlAlgoWorker {
                 carrier.gradients.clear();
                 carrier.gradients.add(params);
                 while(client.update(hostId, tableId, carrier) == false) {
-                    Thread.sleep(1);
+                    Thread.sleep(time2sleep);
                 }
 
             }
@@ -226,8 +238,9 @@ public class LRWorker extends MlAlgoWorker {
         int rowDim = tmp.getRowDimension();
 
         double cost = tmp.transpose().times(tmp).get(0, 0)/(2.0*rowDim);
-
-        System.out.println("Iter " + buffer.localClock + " the cost is: <" + cost + ">");
+        costMetric = cost;
+        // System.out.println("Iter " + buffer.localClock + " the cost is: <" + cost + ">");
+        logger.info("Iter " + buffer.localClock + " the cost is: <" + cost + ">");
 
         double deltaArray[][] = X.transpose().times(tmp).times(lr/m*(-1.0)).getArray();
         ArrayList<Double> deltaList = new ArrayList<Double>(n);

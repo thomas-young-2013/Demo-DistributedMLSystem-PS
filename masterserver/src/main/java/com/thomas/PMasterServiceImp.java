@@ -25,8 +25,8 @@ public class PMasterServiceImp implements PMasterService.Iface {
         return master.getJobResult(jobId);
     }
 
-    public boolean getJobDone(String hostId, long jobId, ExecInfo execInfo) {
-        return master.getJobDone(hostId, jobId, execInfo);
+    public boolean getJobDone(long jobId, ExecInfo execInfo) {
+        return master.getJobDone(jobId, execInfo);
     }
 
     public boolean isAlive() {

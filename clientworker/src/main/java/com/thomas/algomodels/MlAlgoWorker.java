@@ -3,21 +3,25 @@ package com.thomas.algomodels;
 import com.thomas.thrift.server.Carrier;
 import com.thomas.utils.constant.NodeStatus;
 
+import java.util.Properties;
+
 /**
  * Created by hadoop on 3/11/17.
  */
 public abstract class MlAlgoWorker {
     public MlAlgoType algoType;
-    public Properties properties;
+    public Props properties;
     public String hostId;
     public int workerStatus;
+    public Properties props;
 
     public MlAlgoWorker() {}
 
-    public MlAlgoWorker(MlAlgoType mlAlgoType, Properties properties) {
+    public MlAlgoWorker(MlAlgoType mlAlgoType, Props properties, Properties props) {
         this.algoType = mlAlgoType;
         this.properties = properties;
         this.workerStatus = NodeStatus.RUNNING;
+        this.props = props;
     }
     /*
     * to do list:

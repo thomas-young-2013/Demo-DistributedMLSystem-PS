@@ -24,4 +24,12 @@ public class Node {
                 ", status=" + status +
                 '}';
     }
+
+    public static Node getNodeFromString(String str) {
+        String []data = str.split(":");
+        if (data.length > 1) {
+            return new Node(data[0], Integer.parseInt(data[1]));
+        }
+        return null;
+    }
 }

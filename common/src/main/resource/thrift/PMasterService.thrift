@@ -31,9 +31,8 @@ service PMasterService {
   ),
 
   bool getJobDone(
-    1:string hostId,
-    2:i64 jobId,
-    3:ExecInfo execInfo
+    1:i64 jobId,
+    2:ExecInfo execInfo
   ),
 
   bool isAlive()

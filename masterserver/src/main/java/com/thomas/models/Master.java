@@ -77,8 +77,9 @@ public class Master {
         return null;
     }
 
-    public boolean getJobDone(String hostId, long jobId, ExecInfo execInfo) {
+    public boolean getJobDone(long jobId, ExecInfo execInfo) {
         try {
+            logger.info("the exec info is: " + execInfo);
             jobs.get(jobId).execInfo.add(execInfo);
             return true;
         } catch (Exception e) {

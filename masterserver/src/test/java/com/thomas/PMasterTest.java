@@ -22,8 +22,11 @@ public class PMasterTest {
         final PMasterTest workerTest = new PMasterTest();
 
         // start a worker and run a job.
-        long jobId = workerTest.startWorker("localhost", 8999, 30000);
-        System.out.println("the job id is: " + jobId);
+        if (false) {
+            long jobId = workerTest.startWorker("localhost", 8999, 30000);
+            System.out.println("the job id is: " + jobId);
+        }
+        workerTest.getJobResult(1491622327337L, "localhost", 8999, 30000);
     }
 
     public long startWorker(String host, int port, int timeout) {
@@ -62,5 +65,26 @@ public class PMasterTest {
             }
         }
         return -1;
+    }
+
+    public void getJobResult(long jobId, String host, int port, int timeout) {
+        TTransport transport = null;
+        try {
+            transport = new TSocket(host, port, timeout);
+            TProtocol protocol = new TBinaryProtocol(transport);
+            PMasterService.Client client = new PMasterService.Client(protocol);
+            transport.open();
+
+            System.out.println(client.getJobResult(jobId));
+
+        } catch (TTransportException e) {
+            e.printStackTrace();
+        } catch (TException e) {
+            e.printStackTrace();
+        } finally {
+            if (null != transport) {
+                transport.close();
+            }
+        }
     }
 }
