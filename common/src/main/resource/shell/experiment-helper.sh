@@ -5,6 +5,7 @@
 # app_home=`pwd`
 app_home="/home/hadoop/Desktop/codes/DistributedMLSystem"
 expe_home="/home/hadoop/Desktop/experiment"
+py_script_home="${app_home}/common/src/main/resource/python"
 
 declare -i n_worker=1
 
@@ -18,7 +19,12 @@ create_worker() {
     cp -rf "${app_home}/project/out/distributedMLSystem/worker/" "$expe_home/"
     mv "$expe_home/worker" "$expe_home/worker${t}"
     # change the conf file.
+    config_file="$expe_home/worker${t}/conf/worker.properties"
+    python "${py_script_home}/config-reviser.py" $config_file $t
 
+    # chmod
+    chmod 777 "$expe_home/worker${t}/bin/start.sh"
+    chmod 777 "$expe_home/worker${t}/bin/stop.sh"
 }
 
 run() {
@@ -36,7 +42,6 @@ run() {
     t=1
     while(( $t<=$n_worker ))
     do
-        echo $t
         create_worker $t
         let "t++"
     done
