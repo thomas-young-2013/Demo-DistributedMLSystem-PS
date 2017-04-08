@@ -47,7 +47,7 @@ public class PMasterTest {
 
             JobConfig jobConfig = new JobConfig();
             jobInfo.jobType = "LINEAR_REGRESSION";
-            jobInfo.learningRate = 0.009;
+            jobInfo.learningRate = 0.005;
             jobInfo.dataPaths = dataPath;
             jobInfo.iteNum = 1000;
             // jobInfo.parallelType="SSP:5";
