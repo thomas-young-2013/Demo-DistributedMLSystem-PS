@@ -76,4 +76,8 @@ public class Buffer {
     public void increment() {
         localClock++;
     }
+
+    public int getIter() {
+        return localClock;
+    }
 }

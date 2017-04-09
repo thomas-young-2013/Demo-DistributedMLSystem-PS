@@ -19,4 +19,5 @@ if __name__ == "__main__":
             f.write("host=worker%d\n" % id)
             f.write("port=%d\n" % (port_base+id))
             f.write("master=localhost:8999\n")
+            f.write("metric_gap=100\n")
             f.write("time2sleep=1\n")

@@ -37,8 +37,10 @@ public class LRWorker extends MlAlgoWorker {
     private int iteNum, m, n;
     private Matrix X, A, y;
     private String tableId;
-    private double costMetric;
+    private ArrayList<Double> costMetric;
+    private int metricGap;
     private int time2sleep = 1;
+    private long computeTime;
     private Node masterNode;
 
     private Logger logger = Logger.getLogger(this.getClass());
@@ -63,10 +65,12 @@ public class LRWorker extends MlAlgoWorker {
             tableId = properties.PSTableId;
             hostId = props.getProperty("host", "worker");
             time2sleep = Integer.parseInt(props.getProperty("time2sleep", "1"));
+            metricGap = Integer.parseInt(props.getProperty("metric_gap", "100"));
             String master = props.getProperty("master", "localhost:8999");
             this.masterNode = Node.getNodeFromString(master);
 
             this.buffer = new Buffer(properties.rowNum, properties.dimems, properties.stale);
+            this.costMetric = new ArrayList<Double>();
 
             // about Linear Regression Computation
             DataInfo dataInfo = getDataInfo(properties.dataPath);
@@ -105,6 +109,8 @@ public class LRWorker extends MlAlgoWorker {
             client = new ParameterServerService.Client(protocol);
 
             long startTime = System.currentTimeMillis();
+            this.computeTime = 0L;
+
             if (properties.parallelType.equals(ParallelType.BSP)) lr();
             if (properties.parallelType.equals(ParallelType.SSP)) lrSSP();
             long endTime = System.currentTimeMillis();
@@ -112,7 +118,7 @@ public class LRWorker extends MlAlgoWorker {
             logger.info("it costs: " + (endTime-startTime)/1000.0 + "s");
 
             // after training, report the result to master node.
-            ExecInfo execInfo = new ExecInfo(endTime-startTime, costMetric, hostId);
+            ExecInfo execInfo = new ExecInfo(endTime-startTime, computeTime, costMetric, hostId);
             if (MasterUtils.getJobDone(masterNode, properties.jobId, execInfo)) logger.info("result report success!");
             else logger.error("result report error!");
 
@@ -152,7 +158,7 @@ public class LRWorker extends MlAlgoWorker {
         // train it and store it in buffer.
         ArrayList<Double> params = buffer.get();
 
-        ArrayList<Double> updates = getDeltaPrams(params);
+        ArrayList<Double> updates = getDeltaPrams(buffer.getIter(), params);
         buffer.update(updates);
     }
 
@@ -197,7 +203,10 @@ public class LRWorker extends MlAlgoWorker {
 
                 assert i==buffer.globalClock : "Errors Here!";
 
+                long startTime = System.currentTimeMillis();
                 train();
+                this.computeTime += (System.currentTimeMillis() - startTime);
+
                 update();
             }
         } catch (Exception e) {
@@ -214,9 +223,9 @@ public class LRWorker extends MlAlgoWorker {
                     Thread.sleep(1);
                     carrier = client.read(hostId, tableId, i, 2);
                 }
-
-                ArrayList<Double> params = getDeltaPrams((ArrayList<Double>) carrier.gradients.get(0));
-
+                long startTime = System.currentTimeMillis();
+                ArrayList<Double> params = getDeltaPrams(i, (ArrayList<Double>) carrier.gradients.get(0));
+                this.computeTime += (System.currentTimeMillis() - startTime);
                 carrier.gradients.clear();
                 carrier.gradients.add(params);
                 while(client.update(hostId, tableId, carrier) == false) {
@@ -229,7 +238,7 @@ public class LRWorker extends MlAlgoWorker {
         }
     }
 
-    public ArrayList<Double> getDeltaPrams(ArrayList<Double> params) {
+    public ArrayList<Double> getDeltaPrams(int iter, ArrayList<Double> params) {
         double [][] thetaArray = new double[params.size()][1];
         for (int i=0; i<params.size(); i++) thetaArray[i][0] = params.get(i);
         Matrix theta = new Matrix(thetaArray);
@@ -238,7 +247,8 @@ public class LRWorker extends MlAlgoWorker {
         int rowDim = tmp.getRowDimension();
 
         double cost = tmp.transpose().times(tmp).get(0, 0)/(2.0*rowDim);
-        costMetric = cost;
+        if (iter%metricGap == 0) costMetric.add(cost);
+
         // System.out.println("Iter " + buffer.localClock + " the cost is: <" + cost + ">");
         logger.info("Iter " + buffer.localClock + " the cost is: <" + cost + ">");
 

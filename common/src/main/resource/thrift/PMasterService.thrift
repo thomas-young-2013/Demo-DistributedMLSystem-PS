@@ -11,8 +11,9 @@ struct JobInfo {
 
 struct ExecInfo {
   1: i64 execTime,
-  2: double loss,
-  3: string hostId
+  2: i64 computeTime,
+  3: list<double> loss,
+  4: string hostId
 }
 
 struct JobResult {
