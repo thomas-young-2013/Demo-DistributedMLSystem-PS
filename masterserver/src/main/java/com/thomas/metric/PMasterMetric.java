@@ -20,8 +20,11 @@ import java.util.List;
  * Created by hadoop on 4/7/17.
  */
 public class PMasterMetric {
+    private String parallel;
+    private int iterNum;
+    private double learningRate;
 
-    public static void main(String []args) {
+    public static void main(String []args) throws Exception {
         // create parameter table and init it. localhost 9000
         final PMasterMetric workerTest = new PMasterMetric();
         if (args.length > 0) {
@@ -31,9 +34,17 @@ public class PMasterMetric {
             if (args[0].equalsIgnoreCase("metric")) flag = 2;
 
             long jobId;
-            if (flag == 1) {
+            if (flag == 1 && args.length > 3) {
+                workerTest.parallel = args[1];
+                workerTest.iterNum = Integer.parseInt(args[2]);
+                workerTest.learningRate = Double.parseDouble(args[3]);
                 jobId = workerTest.startWorker("localhost", 8999, 30000);
                 System.out.println("the job id is: " + jobId);
+                JobResult jobResult=null;
+                while(jobResult == null) {
+                    jobResult = workerTest.getJobResult(jobId, "localhost", 8999, 30000);
+                    Thread.sleep(1000);
+                }
             }
             if (flag == 2 && args.length > 1) {
                 jobId = Long.parseLong(args[1]);
@@ -59,11 +70,11 @@ public class PMasterMetric {
 
             JobConfig jobConfig = new JobConfig();
             jobInfo.jobType = "LINEAR_REGRESSION";
-            jobInfo.learningRate = 0.002;
+            jobInfo.learningRate = learningRate;
             jobInfo.dataPaths = dataPath;
-            jobInfo.iteNum = 1000;
+            jobInfo.iteNum = iterNum;
             // jobInfo.parallelType="SSP:5";
-            jobInfo.parallelType="BSP";
+            jobInfo.parallelType=parallel;
             jobInfo.extraParams="1:3:ZERO";
 
             return client.createJob(jobInfo);
@@ -80,8 +91,9 @@ public class PMasterMetric {
         return -1;
     }
 
-    public void getJobResult(long jobId, String host, int port, int timeout) {
+    public JobResult getJobResult(long jobId, String host, int port, int timeout) {
         TTransport transport = null;
+        JobResult jobResult = null;
         try {
             transport = new TSocket(host, port, timeout);
             TProtocol protocol = new TBinaryProtocol(transport);
@@ -89,8 +101,9 @@ public class PMasterMetric {
             transport.open();
 
             System.out.println("Raw Input is: ");
-            System.out.println(client.getJobResult(jobId));
-            JobResult jobResult = client.getJobResult(jobId);
+            jobResult = client.getJobResult(jobId);
+            if (jobResult == null) return jobResult;
+            System.out.println(jobResult);
 
             double ratio = 0.0;
             long conv_time = 0L;
@@ -119,6 +132,7 @@ public class PMasterMetric {
             if (null != transport) {
                 transport.close();
             }
+            return jobResult;
         }
     }
 }
