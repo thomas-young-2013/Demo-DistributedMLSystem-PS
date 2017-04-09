@@ -247,7 +247,7 @@ public class LRWorker extends MlAlgoWorker {
         int rowDim = tmp.getRowDimension();
 
         double cost = tmp.transpose().times(tmp).get(0, 0)/(2.0*rowDim);
-        if (iter%metricGap == 0) costMetric.add(cost);
+        if (iter%metricGap == 0 || iter == iteNum-1) costMetric.add(cost);
 
         // System.out.println("Iter " + buffer.localClock + " the cost is: <" + cost + ">");
         logger.info("Iter " + buffer.localClock + " the cost is: <" + cost + ">");

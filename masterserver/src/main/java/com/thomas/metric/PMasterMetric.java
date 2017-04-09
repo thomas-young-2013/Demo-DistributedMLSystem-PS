@@ -1,4 +1,4 @@
-package com.thomas;
+package com.thomas.metric;
 
 import com.thomas.thrift.master.ExecInfo;
 import com.thomas.thrift.master.JobInfo;
@@ -19,11 +19,11 @@ import java.util.List;
 /**
  * Created by hadoop on 4/7/17.
  */
-public class PMasterTest {
+public class PMasterMetric {
 
     public static void main(String []args) {
         // create parameter table and init it. localhost 9000
-        final PMasterTest workerTest = new PMasterTest();
+        final PMasterMetric workerTest = new PMasterMetric();
         if (args.length > 0) {
             // start a worker and run a job.
             int flag = 0;
