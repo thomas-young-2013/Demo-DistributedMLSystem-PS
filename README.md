@@ -5,6 +5,10 @@ this project implements: a simplified distributed ML framework, which support BS
 [1] Mu Li,David G.Andersen,Jun Woo Park,Alexander J.Smola, Amr Ahmedy, Vanja Josifovski,James Long,Eugene J.Shekita, Bor-Yiing Su; Scaling Distributed Machine Learning with the Parameter Server; Carnegie Mellon University,Baidu,Google; 
 [2] Qirong Ho,James Cipar,Henggang Cui,Jin Kyu Kim,Seunghak Lee,Phillip B.Gibbons, Garth A.Gibson, Gregory R.Ganger, Eric P.Xing; More Effective Distributed ML via a Stale Synchronous Parallel Parameter Server; School of Computer Science、Carnegie Mellon University,Electrical and Computer Engineering,Carnegie Mellon University,Intel Labs 
 
+### Environment
+1. operating system: linux
+2. jdk: 1.8 and later
+
 ### Scripts related:
 * project-tools.sh
 * exp-tools.sh
