@@ -5,8 +5,6 @@ this project implements: a simplified distributed ML framework, which support BS
 [1] Mu Li,David G.Andersen,Jun Woo Park,Alexander J.Smola, Amr Ahmedy, Vanja Josifovski,James Long,Eugene J.Shekita, Bor-Yiing Su; Scaling Distributed Machine Learning with the Parameter Server; Carnegie Mellon University,Baidu,Google; 
 [2] Qirong Ho,James Cipar,Henggang Cui,Jin Kyu Kim,Seunghak Lee,Phillip B.Gibbons, Garth A.Gibson, Gregory R.Ganger, Eric P.Xing; More Effective Distributed ML via a Stale Synchronous Parallel Parameter Server; School of Computer Science、Carnegie Mellon University,Electrical and Computer Engineering,Carnegie Mellon University,Intel Labs 
 
----
-
 ### Scripts related:
 * project-tools.sh
 * exp-tools.sh
@@ -44,4 +42,4 @@ for example:
 `./analysis-tools.sh run SSP:4 1000 0.001`: run SSP version with stale 4, the iteration number is 1000 withe learning rate is 0.001
 
 ### End
-if you have some ideas or question, please contact us.
+if you have some ideas or questions, please contact us.
